@@ -10,3 +10,9 @@ class ModelTests(TestCase):
 
         self.assertEqual(category.name, 'Shoes')
         self.assertEqual(str(category), 'Shoes')
+
+    def test_create_brand(self):
+        brand = models.Brand(name='Nike')
+
+        self.assertEqual(brand.name, 'Nike')
+        self.assertEqual(str(brand), 'Nike')
