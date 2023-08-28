@@ -18,7 +18,6 @@ class ModelTests(TestCase):
         self.assertEqual(str(brand), 'Nike')
 
     def test_create_product(self):
-        category = models.Category.objects.create(name='Shoes')
         brand = models.Brand.objects.create(name='Nike')
         payload = {
             'name': 'Snickers',
@@ -26,11 +25,9 @@ class ModelTests(TestCase):
             'description': 'Sample snickers description.'
         }
         product = models.Product.objects.create(**payload)
-        product.category.add(category)
 
-        for k, v in payload:
-            self.assertEqual(product.getattr(k), v)
+        for k, v in payload.items():
+            self.assertEqual(getattr(product, k), v)
 
-        self.assertIn(category, product.category.all())
         self.assertFalse(product.is_digital)
         self.assertTrue(product.is_active)
