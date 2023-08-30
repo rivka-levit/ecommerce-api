@@ -9,12 +9,12 @@ from rest_framework import status
 
 from product.models import Category
 
-CATEGORIES_URL = reverse('product:category-list')
+CATEGORIES_URL = reverse('store:category-list')
 
 
 def detail_url(category_id):
     """Create and return the url of detail page."""
-    return reverse('product:category-detail', args=[category_id])
+    return reverse('store:category-detail', args=[category_id])
 
 
 def create_category():
