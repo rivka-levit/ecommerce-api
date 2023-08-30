@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # External Packages
     'rest_framework',
     'mptt',
+    'drf_spectacular',
     # Internal Apps
     'product',
 ]
@@ -116,4 +117,12 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {}
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Django eCommerce RESTfull API',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': r'/api',
+}
