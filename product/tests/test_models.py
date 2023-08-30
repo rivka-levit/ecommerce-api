@@ -19,6 +19,25 @@ class ModelTests(TestCase):
         )
         self.assertIn(sub_category, category.children.all())
 
+    def test_create_tree_categories_to_same_parent(self):
+        parent_category = models.Category.objects.create(name='Parent')
+        cat1 = models.Category.objects.create(
+            name='Cat1',
+            parent=parent_category
+        )
+        cat2 = models.Category.objects.create(
+            name='Cat2',
+            parent=parent_category
+        )
+        cat3 = models.Category.objects.create(
+            name='Cat3',
+            parent=parent_category
+        )
+        for cat in (cat1, cat2, cat3):
+            self.assertEqual(cat.parent, parent_category)
+            parent_category.refresh_from_db()
+            self.assertEqual(parent_category.children.count(), 3)
+
     def test_create_brand(self):
         brand = models.Brand.objects.create(name='Nike')
 
