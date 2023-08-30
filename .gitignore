@@ -252,3 +252,4 @@ fabric.properties
 /.idea/vcs.xml
 /.idea/codeStyles/codeStyleConfig.xml
 /.idea/dataSources.xml
+/schema.yml
