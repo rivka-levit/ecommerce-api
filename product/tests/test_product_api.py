@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from product.models import Product, Category, Brand
+from product.serializers import ProductSerializer
 
 PRODUCTS_URL = reverse('product-list')
 
@@ -54,9 +55,22 @@ class TestProduct(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
-        product = Product.objects.get(id=r.data['id'])
+        products = Product.objects.all()
+        self.assertEqual(products.count(), 1)
+        product = products[0]
         for k, v in payload.items():
             self.assertEqual(getattr(product, k), v)
+
+    def test_get_product_detail(self):
+        """Test retrieving a single product."""
+        product = create_product()
+        url = detail_url(product.id)
+
+        r = self.client.get(url)
+        serializer = ProductSerializer(product)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data, serializer.data)
 
     def test_create_product_with_brand(self):
         """Test creating a product with brand."""
@@ -69,7 +83,9 @@ class TestProduct(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
-        product = Product.objects.get(id=r.data['id'])
+        products = Product.objects.all()
+        self.assertEqual(products.count(), 1)
+        product = products[0]
         self.assertEqual(product.brand.name, payload['brand']['name'])
 
     def test_create_product_with_category(self):
@@ -80,14 +96,16 @@ class TestProduct(TestCase):
             'description': 'Great fashion bag from leather.',
             'category': {
                 'name': 'Bags',
-                'parent': parent_category,
+                'parent': parent_category.id,
             }
         }
 
         r = self.client.post(PRODUCTS_URL, payload, format='json')
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
-        product = Product.objects.get(id=r.data['id'])
+        products = Product.objects.all()
+        self.assertEqual(products.count(), 1)
+        product = products[0]
         self.assertEqual(product.category.name, payload['category']['name'])
         self.assertEqual(product.category.parent, parent_category)
 
