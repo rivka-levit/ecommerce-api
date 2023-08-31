@@ -25,6 +25,7 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email, name, password):
         """Creates and return a new superuser."""
+
         user = self.create_user(email, name, password)
 
         user.is_superuser = True
@@ -35,8 +36,11 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """Represents a user in the system. Stores all user account
-    related data, such as 'email address' and 'name'."""
+    """
+    Represents a user in the system. Stores all user account
+    related data, such as 'email address' and 'name'.
+    """
+
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
