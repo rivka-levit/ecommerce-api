@@ -45,7 +45,9 @@ class Product(models.Model):
         to=Category,
         null=True,
         blank=True,
-        on_delete=models.SET_NULL)
+        on_delete=models.SET_NULL,
+        related_name='products'
+    )
     is_digital = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -3,6 +3,19 @@ from django.test import TestCase
 from product import models
 
 
+def create_product(**params) -> models.Product:
+    """Create and return a sample product"""
+    defaults = {
+        'name': 'Sample product name',
+        'description': 'Sample product description.'
+    }
+    defaults.update(params)
+
+    product = models.Product.objects.create(**defaults)
+
+    return product
+
+
 class ModelTests(TestCase):
     """Tests for models."""
     def test_create_category_without_parent(self):
@@ -19,7 +32,7 @@ class ModelTests(TestCase):
         )
         self.assertIn(sub_category, category.children.all())
 
-    def test_create_tree_categories_to_same_parent(self):
+    def test_create_three_categories_to_same_parent(self):
         parent_category = models.Category.objects.create(name='Parent')
         cat1 = models.Category.objects.create(
             name='Cat1',
@@ -46,12 +59,17 @@ class ModelTests(TestCase):
 
     def test_create_product(self):
         brand = models.Brand.objects.create(name='Nike')
+        category = models.Category.objects.create(name='Shoes')
         payload = {
             'name': 'Snickers',
             'brand': brand,
+            'category': category,
             'description': 'Sample snickers description.'
         }
-        product = models.Product.objects.create(**payload)
+        # product = models.Product.objects.create(**payload)
+        product = create_product(**payload)
+
+        self.assertEqual(str(product), payload['name'])
 
         for k, v in payload.items():
             self.assertEqual(getattr(product, k), v)
