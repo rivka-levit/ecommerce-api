@@ -24,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         name = validated_data.pop('name', None)
 
-        # Generate a name for the user it has not been provided
+        # Generate a name for the user, if it has not been provided
         if not name:
             email = validated_data['email']
             name = email.split('@')[0]
