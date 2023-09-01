@@ -43,6 +43,7 @@ class PublicUserApiTests(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertEqual(r.data['email'], payload['email'])
+        self.assertEqual(r.data['name'], payload['name'])
         user = get_user_model().objects.get(email=payload['email'])
         self.assertTrue(user.check_password(payload['password']))
         self.assertNotIn('password', r.data)
@@ -69,7 +70,6 @@ class PublicUserApiTests(TestCase):
 
         payload = {
             'email': 'abc@example.com',
-            'name': 'Sample Name',
             'password': 'test_pass123'
         }
 
