@@ -11,7 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['email', 'name', 'password']
+        fields = ['email', 'password']
         extra_kwargs = {
             'password': {
                 'write_only': True,
@@ -21,5 +21,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create and return a user."""
+
+        name = validated_data.pop('name', None)
+
+        if not name:
+            email = validated_data['email']
+            name = email.split('@')[0]
+            validated_data['name'] = name
 
         return get_user_model().objects.create_user(**validated_data)
