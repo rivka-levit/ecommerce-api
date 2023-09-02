@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 CREATE_USER_URL = reverse('user:create')
+PROFILE_URL = reverse('user:profile')
 
 
 def create_user(**params):
@@ -95,5 +96,63 @@ class PublicUserApiTests(TestCase):
         self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
         exists = get_user_model().objects.filter(
             email=payload['email']
+        ).exists()
+        self.assertFalse(exists)
+
+    def test_retrieve_user_profile_unauthorized_fails(self):
+        """Test authentication required to retrieve a user profile. """
+
+        r = self.client.get(PROFILE_URL)
+
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateUserApiTests(TestCase):
+    """Test API requests that require authentication."""
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = create_user()
+        self.client.force_authenticate(self.user)
+
+    def test_retrieve_user_profile_success(self):
+        """Test retrieving user's own profile successful."""
+
+        r = self.client.get(PROFILE_URL)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['name'], self.user.name)
+        self.assertEqual(r.data['email'], self.user.email)
+
+    def test_post_not_allowed_user_profile(self):
+        """Test post request is not allowed for user profile."""
+
+        r = self.client.post(PROFILE_URL, {})
+
+        self.assertEqual(r.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_user_profile_success(self):
+        """Test updating user's own profile successful."""
+
+        payload = {
+            'name': 'Another Name',
+            'password': 'another_test_pass1234'
+        }
+
+        r = self.client.patch(PROFILE_URL, payload)
+
+        self.user.refresh_from_db()
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.user.name, payload['name'])
+        self.assertTrue(self.user.check_password(payload['password']))
+
+    def test_delete_user_profile(self):
+        """Test removing user's own profile."""
+
+        r = self.client.delete(PROFILE_URL)
+
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        exists = get_user_model().objects.filter(
+            email=self.user.email
         ).exists()
         self.assertFalse(exists)
