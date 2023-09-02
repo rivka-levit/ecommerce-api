@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 
 CREATE_USER_URL = reverse('user:create')
 PROFILE_URL = reverse('user:profile')
+TOKEN_URL = reverse('user:token')
 
 
 def create_user(**params):
@@ -112,7 +113,7 @@ class PrivateUserApiTests(TestCase):
 
     def setUp(self) -> None:
         self.client = APIClient()
-        self.user = create_user()
+        self.user = create_user(email='test_user@example.com')
         self.client.force_authenticate(self.user)
 
     def test_retrieve_user_profile_success(self):
@@ -156,3 +157,45 @@ class PrivateUserApiTests(TestCase):
             email=self.user.email
         ).exists()
         self.assertFalse(exists)
+
+    def test_create_token_success(self):
+        """Test generating a token for existing user."""
+
+        user_credentials = {
+            'email': 'user0987@example.com',
+            'password': 'test_pass5566'
+        }
+        create_user(**user_credentials)
+
+        r = self.client.post(TOKEN_URL, user_credentials)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertIn('token', r.data)
+
+    def test_create_token_invalid_password_fails(self):
+        """Test generating token fails with invalid password."""
+
+        create_user()
+        payload = {
+            'email': 'test@example.com',
+            'password': 'bad_password'
+        }
+
+        r = self.client.post(TOKEN_URL, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn('token', r.data)
+
+    def test_create_token_blank_password_fails(self):
+        """Test generating token fails with blank password."""
+
+        create_user()
+        payload = {
+            'email': 'test@example.com',
+            'password': ''
+        }
+
+        r = self.client.post(TOKEN_URL, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertNotIn('token', r.data)
