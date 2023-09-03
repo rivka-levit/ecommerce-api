@@ -31,10 +31,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # External Packages
     'rest_framework',
+    'rest_framework.authtoken',
     'mptt',
     'drf_spectacular',
     # Internal Apps
     'product',
+    'user',
 ]
 
 MIDDLEWARE = [
@@ -126,3 +128,5 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
     'SCHEMA_PATH_PREFIX': r'/api',
 }
+
+AUTH_USER_MODEL = 'user.User'
