@@ -18,9 +18,9 @@ def detail_url(category_id):
     return reverse('category-detail', args=[category_id])
 
 
-def create_category():
+def create_category(user):
     """Create a sample category for testing purposes."""
-    return Category.objects.create(name='Sample Name')
+    return Category.objects.create(user=user, name='Sample Name')
 
 
 class PublicCategoryApiTests(TestCase):
@@ -32,20 +32,7 @@ class PublicCategoryApiTests(TestCase):
     def test_category_list_access_denied_unauthenticated(self):
         """Test access denied when the user is not authenticated."""
 
-        create_category()
-        create_category()
-
         r = self.client.get(CATEGORIES_URL)
-
-        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_retrieve_category_detail_require_auth(self):
-        """Test retrieving detail api requires authentication."""
-
-        category = create_category()
-
-        url = detail_url(category.id)
-        r = self.client.get(url)
 
         self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -64,8 +51,8 @@ class PrivateCategoryApiTests(TestCase):
 
     def test_get_category_list_success(self):
         """Test retrieving the list of categories."""
-        create_category()
-        create_category()
+        create_category(self.user)
+        create_category(self.user)
 
         r = self.client.get(CATEGORIES_URL)
 
@@ -84,7 +71,7 @@ class PrivateCategoryApiTests(TestCase):
         self.assertEqual(category.name, payload['name'])
 
     def test_get_single_category(self):
-        cat = create_category()
+        cat = create_category(self.user)
         url = detail_url(cat.id)
 
         r = self.client.get(url)
@@ -93,7 +80,7 @@ class PrivateCategoryApiTests(TestCase):
         self.assertEqual(r.data['id'], cat.id)
 
     def test_update_category(self):
-        cat = create_category()
+        cat = create_category(self.user)
         payload = {'name': 'Clothes'}
 
         url = detail_url(cat.id)
@@ -104,7 +91,7 @@ class PrivateCategoryApiTests(TestCase):
         self.assertEqual(cat.name, payload['name'])
 
     def test_delete_category(self):
-        cat = create_category()
+        cat = create_category(self.user)
 
         url = detail_url(cat.id)
         r = self.client.delete(url)

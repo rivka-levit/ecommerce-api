@@ -1,10 +1,17 @@
 from django.db import models
+
 from mptt.models import MPTTModel, TreeForeignKey
+
+from user.models import User
 
 
 class Category(MPTTModel):
     """Category object."""
     name = models.CharField(max_length=255)
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name='categories')
     is_active = models.BooleanField(default=True)
     parent = TreeForeignKey(
         'self',
@@ -24,6 +31,10 @@ class Category(MPTTModel):
 class Brand(models.Model):
     """Brand object."""
     name = models.CharField(max_length=255)
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name='brands')
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -34,6 +45,11 @@ class Product(models.Model):
     """Product object."""
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name='products'
+    )
     brand = models.ForeignKey(
         to=Brand,
         on_delete=models.CASCADE,

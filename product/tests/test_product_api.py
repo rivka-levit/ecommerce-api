@@ -2,12 +2,13 @@
 Tests for product APIs.
 """
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from product.models import Product, Category, Brand
+from product.models import Product, Category
 from product.serializers import ProductSerializer
 
 PRODUCTS_URL = reverse('product-list')
@@ -18,7 +19,7 @@ def detail_url(product_id) -> str:
     return reverse('product-detail', args=[product_id])
 
 
-def create_product(**params) -> Product:
+def create_product(user, **params) -> Product:
     """Create and return a sample product."""
     defaults = {
         'name': 'Sample Product',
@@ -26,18 +27,23 @@ def create_product(**params) -> Product:
     }
     defaults.update(params)
 
-    return Product.objects.create(**defaults)
+    return Product.objects.create(user=user, **defaults)
 
 
 class TestProduct(TestCase):
     """Tests for product APIs."""
     def setUp(self) -> None:
         self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='test455@example.com',
+            password='test_pass123'
+        )
+        self.client.force_authenticate(self.user)
 
     def test_retrieve_product_list(self):
         """Test retrieving the list of products."""
-        create_product()
-        create_product()
+        create_product(self.user)
+        create_product(self.user)
 
         r = self.client.get(PRODUCTS_URL)
 
@@ -63,7 +69,7 @@ class TestProduct(TestCase):
 
     def test_get_product_detail(self):
         """Test retrieving a single product."""
-        product = create_product()
+        product = create_product(self.user)
         url = detail_url(product.id)
 
         r = self.client.get(url)
@@ -90,7 +96,10 @@ class TestProduct(TestCase):
 
     def test_create_product_with_category(self):
         """Test creating a product with category."""
-        parent_category = Category.objects.create(name='Accessories')
+        parent_category = Category.objects.create(
+            user=self.user,
+            name='Accessories'
+        )
         payload = {
             'name': 'Fashion Bag',
             'description': 'Great fashion bag from leather.',
@@ -111,7 +120,7 @@ class TestProduct(TestCase):
 
     def test_update_product(self):
         """Test updating a product."""
-        product = create_product()
+        product = create_product(self.user)
         payload = {
             'brand': {'name': 'Desigual'},
             'category': {'name': 'Accessories'}
@@ -126,7 +135,7 @@ class TestProduct(TestCase):
 
     def test_delete_product(self):
         """Test removing a product."""
-        product = create_product()
+        product = create_product(self.user)
         url = detail_url(product.id)
 
         r = self.client.delete(url)

@@ -29,19 +29,27 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['name', 'description', 'brand', 'category', 'is_digital',
-                  'is_active', 'created_at']
+        fields = ['id', 'name', 'description', 'brand', 'category',
+                  'is_digital', 'is_active', 'created_at']
         read_only_fields = ['id']
 
     def _get_or_create_and_assign_brand(self, brand, product):
+        auth_user = self.context['request'].user
         if brand is not None:
-            brand_obj, created = Brand.objects.get_or_create(**brand)
+            brand_obj, created = Brand.objects.get_or_create(
+                user=auth_user,
+                **brand
+            )
             product.brand = brand_obj
             product.save()
 
     def _get_or_create_and_assign_category(self, category, product):
+        auth_user = self.context['request'].user
         if category is not None:
-            category_obj, created = Category.objects.get_or_create(**category)
+            category_obj, created = Category.objects.get_or_create(
+                user=auth_user,
+                **category
+            )
             product.category = category_obj
             product.save()
 

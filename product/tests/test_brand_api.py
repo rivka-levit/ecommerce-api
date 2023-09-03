@@ -2,6 +2,7 @@
 Tests for brand APIs.
 """
 from django.urls import reverse
+from django.contrib.auth import get_user_model
 
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -16,27 +17,32 @@ def detail_url(brand_id):
     return reverse('brand-detail', args=[brand_id])
 
 
-def create_brand(**params):
+def create_brand(user, **params):
     """Create and return a sample brand."""
     defaults = {
         'name': 'Sample Brand'
     }
     defaults.update(params)
 
-    brand = Brand.objects.create(**defaults)
+    brand = Brand.objects.create(user=user, **defaults)
 
     return brand
 
 
-class TestBrand(TestCase):
+class PrivateBrandTests(TestCase):
     """Tests for brand APIs."""
     def setUp(self) -> None:
         self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='test1566@exapmle.com',
+            password='test_pass123'
+        )
+        self.client.force_authenticate(self.user)
 
     def test_retrieve_brands_list(self):
         """Test retrieving the list of brands."""
         for _ in range(3):
-            create_brand()
+            create_brand(self.user)
 
         r = self.client.get(BRANDS_URL)
 
@@ -56,7 +62,7 @@ class TestBrand(TestCase):
 
     def test_get_single_brand(self):
         """Test retrieving a single brand."""
-        brand = create_brand()
+        brand = create_brand(user=self.user)
 
         url = detail_url(brand.id)
         r = self.client.get(url)
@@ -66,7 +72,7 @@ class TestBrand(TestCase):
 
     def test_update_brand(self):
         """Test updating a brand."""
-        brand = create_brand(name='Nike')
+        brand = create_brand(name='Nike', user=self.user)
         payload = {'name': 'Adidas'}
 
         url = detail_url(brand.id)
@@ -78,7 +84,7 @@ class TestBrand(TestCase):
 
     def test_remove_brand(self):
         """Test removing a brand."""
-        brand = create_brand()
+        brand = create_brand(user=self.user)
 
         url = detail_url(brand.id)
         r = self.client.delete(url)

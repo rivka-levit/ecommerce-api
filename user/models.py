@@ -10,11 +10,14 @@ from django.contrib.auth.models import (
 class UserManager(BaseUserManager):
     """Manager for using custom user model."""
 
-    def create_user(self, email, name, password=None):
+    def create_user(self, email, name=None, password=None):
         """Creates and return a new user."""
 
         if not email:
             raise ValueError('Users must have an email address.')
+
+        if not name:
+            name = email.split('@')[0]
 
         email = self.normalize_email(email)
         user = self.model(email=email, name=name)
@@ -23,8 +26,11 @@ class UserManager(BaseUserManager):
 
         return user
 
-    def create_superuser(self, email, name, password):
+    def create_superuser(self, email, password, name=None):
         """Creates and return a new superuser."""
+
+        if not name:
+            name = email.split('@')[0]
 
         user = self.create_user(email, name, password)
 
