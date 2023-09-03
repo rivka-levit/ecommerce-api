@@ -2,8 +2,9 @@
 Tests for Category APIs.
 """
 from django.urls import reverse
-
 from django.test import TestCase
+from django.contrib.auth import get_user_model
+
 from rest_framework.test import APIClient
 from rest_framework import status
 
@@ -22,12 +23,46 @@ def create_category():
     return Category.objects.create(name='Sample Name')
 
 
-class TestCategoryApi(TestCase):
-    """Tests for category APIs."""
+class PublicCategoryApiTests(TestCase):
+    """Tests for category APIs when the user is not authenticated."""
+
     def setUp(self) -> None:
         self.client = APIClient()
 
-    def test_get_category_list(self):
+    def test_category_list_access_denied_unauthenticated(self):
+        """Test access denied when the user is not authenticated."""
+
+        create_category()
+        create_category()
+
+        r = self.client.get(CATEGORIES_URL)
+
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_retrieve_category_detail_require_auth(self):
+        """Test retrieving detail api requires authentication."""
+
+        category = create_category()
+
+        url = detail_url(category.id)
+        r = self.client.get(url)
+
+        self.assertEqual(r.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PrivateCategoryApiTests(TestCase):
+    """Tests for category APIs."""
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='test_user_1@example.com',
+            name='Test Name',
+            password='test_123_pass'
+        )
+        self.client.force_authenticate(self.user)
+
+    def test_get_category_list_success(self):
         """Test retrieving the list of categories."""
         create_category()
         create_category()
