@@ -9,49 +9,33 @@ from .models import Category, Brand, Product
 from product import serializers
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class BaseStoreViewSet(viewsets.ModelViewSet):
+    """Base view set for product app APIs."""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """Retrieve products for authenticated user."""
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        """Create a new product assigned to the user."""
+        serializer.save(user=self.request.user)
+
+
+class CategoryViewSet(BaseStoreViewSet):
     """View for managing category APIs."""
     queryset = Category.objects.all()
     serializer_class = serializers.CategorySerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        """Retrieve products for authenticated user."""
-        return self.queryset.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        """Create a new product assigned to the user."""
-        serializer.save(user=self.request.user)
 
 
-class BrandViewSet(viewsets.ModelViewSet):
+class BrandViewSet(BaseStoreViewSet):
     """View for managing brand APIs."""
     queryset = Brand.objects.all()
     serializer_class = serializers.BrandSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        """Retrieve products for authenticated user."""
-        return self.queryset.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        """Create a new product assigned to the user."""
-        serializer.save(user=self.request.user)
 
 
-class ProductViewSet(viewsets.ModelViewSet):
+class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
     queryset = Product.objects.all()
     serializer_class = serializers.ProductSerializer
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        """Retrieve products for authenticated user."""
-        return self.queryset.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        """Create a new product assigned to the user."""
-        serializer.save(user=self.request.user)
