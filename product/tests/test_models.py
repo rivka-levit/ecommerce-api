@@ -74,6 +74,31 @@ class ModelTests(TestCase):
             parent_category.refresh_from_db()
             self.assertEqual(parent_category.children.count(), 3)
 
+    def test_delete_parent_category_set_null_to_children(self):
+        """Test deleting a category and assign None value to its children"""
+
+        parent_category = models.Category.objects.create(
+            user=self.user,
+            name='Parent'
+        )
+        child1 = models.Category.objects.create(
+            user=self.user,
+            name='ch1',
+            parent=parent_category
+        )
+        child2 = models.Category.objects.create(
+            user=self.user,
+            name='ch2',
+            parent=parent_category
+        )
+
+        parent_category.delete()
+
+        child1.refresh_from_db()
+        child2.refresh_from_db()
+        self.assertEqual(child1.parent, None)
+        self.assertEqual(child2.parent, None)
+
     def test_create_brand(self):
         brand = models.Brand.objects.create(name='Nike', user=self.user)
 
