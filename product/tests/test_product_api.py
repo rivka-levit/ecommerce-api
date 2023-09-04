@@ -14,9 +14,9 @@ from product.serializers import ProductSerializer
 PRODUCTS_URL = reverse('product-list')
 
 
-def detail_url(product_id) -> str:
+def detail_url(product_slug) -> str:
     """Return the url of detail pape for single product."""
-    return reverse('product-detail', args=[product_id])
+    return reverse('product-detail', args=[product_slug])
 
 
 def create_product(user, **params) -> Product:
@@ -70,7 +70,7 @@ class TestProduct(TestCase):
     def test_get_product_detail(self):
         """Test retrieving a single product."""
         product = create_product(self.user)
-        url = detail_url(product.id)
+        url = detail_url(product.slug)
 
         r = self.client.get(url)
         serializer = ProductSerializer(product)
@@ -125,7 +125,7 @@ class TestProduct(TestCase):
             'brand': {'name': 'Desigual'},
             'category': {'name': 'Accessories'}
         }
-        url = detail_url(product.id)
+        url = detail_url(product.slug)
         r = self.client.patch(url, payload, format='json')
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -136,7 +136,7 @@ class TestProduct(TestCase):
     def test_delete_product(self):
         """Test removing a product."""
         product = create_product(self.user)
-        url = detail_url(product.id)
+        url = detail_url(product.slug)
 
         r = self.client.delete(url)
 

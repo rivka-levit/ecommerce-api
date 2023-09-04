@@ -51,7 +51,7 @@ class Brand(models.Model):
 class Product(models.Model):
     """Product object."""
     name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    slug = models.SlugField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True)
     user = models.ForeignKey(
         to=User,
@@ -77,8 +77,9 @@ class Product(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        string = f'{self.name} {datetime.now().timestamp()}'
-        self.slug = slugify(string)
+        if self._state.adding:
+            string = f'{self.name} {datetime.now().timestamp()}'
+            self.slug = slugify(string)
         super(Product, self).save(*args, **kwargs)
 
     def __str__(self):
