@@ -124,3 +124,30 @@ class ModelTests(TestCase):
 
         self.assertFalse(product.is_digital)
         self.assertTrue(product.is_active)
+
+    def test_create_product_line_success(self):
+        """Test creating a product line for a product successful."""
+
+        brand = models.Brand.objects.create(name='Desigual', user=self.user)
+        category = models.Category.objects.create(name='Bags', user=self.user)
+
+        product = models.Product.objects.create(
+            name='Fashion bag',
+            description='',
+            user=self.user,
+            brand=brand,
+            category=category
+        )
+
+        data = {
+            'user': self.user,
+            'price': '580.00',
+            'sku': 'bag9877wer',
+            'stock_qty': 38,
+            'product': product
+        }
+
+        product_line = models.ProductLine.objects.create(**data)
+
+        self.assertEqual(str(product_line), data['sku'])
+        self.assertEqual(product_line.stock_qty, data['stock_qty'])
