@@ -1,8 +1,11 @@
 from django.db import models
+from django.utils.text import slugify
 
 from mptt.models import MPTTModel, TreeForeignKey
 
 from user.models import User
+
+from datetime import datetime
 
 
 class Category(MPTTModel):
@@ -47,7 +50,8 @@ class Brand(models.Model):
 
 class Product(models.Model):
     """Product object."""
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=255, unique=True)
     description = models.TextField(blank=True)
     user = models.ForeignKey(
         to=User,
@@ -71,6 +75,11 @@ class Product(models.Model):
     is_digital = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        string = f'{self.name} {datetime.now().timestamp()}'
+        self.slug = slugify(string)
+        super(Product, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name

@@ -1,5 +1,8 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
+
+from datetime import datetime
 
 from product import models
 
@@ -124,6 +127,14 @@ class ModelTests(TestCase):
 
         self.assertFalse(product.is_digital)
         self.assertTrue(product.is_active)
+
+    def test_create_product_generate_slug(self):
+        """Test generating slug automatically when a product is created."""
+        product = create_product(user=self.user)
+        string = f'{product.name} {datetime.now().timestamp()}'
+        expected_slug = slugify(string)
+
+        self.assertEqual(product.slug, expected_slug)
 
     def test_create_product_line_success(self):
         """Test creating a product line for a product successful."""
