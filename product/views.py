@@ -16,7 +16,7 @@ class BaseStoreViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retrieve products for authenticated user."""
-        return self.queryset.filter(user=self.request.user)
+        return self.queryset.filter(user=self.request.user).order_by('-id')
 
     def perform_create(self, serializer):
         """Create a new product assigned to the user."""

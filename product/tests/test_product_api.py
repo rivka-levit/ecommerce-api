@@ -143,3 +143,19 @@ class TestProduct(TestCase):
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
         exists = Product.objects.filter(id=product.id).exists()
         self.assertFalse(exists)
+
+    def test_list_products_by_category(self):
+        """Test listing products and filtering it by category."""
+        category1 = Category.objects.create(user=self.user, name='Cats')
+        category2 = Category.objects.create(user=self.user, name='Dogs')
+        create_product(user=self.user, category=category1)
+        create_product(user=self.user, category=category2)
+        create_product(user=self.user, category=category1)
+
+        params = {'category': f'{category1.name}'}
+        r = self.client.get(PRODUCTS_URL, params)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(r.data), 2)
+        for item in r.data:
+            self.assertEqual(item['category'], category1)
