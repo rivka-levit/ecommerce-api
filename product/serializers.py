@@ -3,7 +3,7 @@ Serializers for product APIs.
 """
 from rest_framework import serializers
 
-from .models import Category, Brand, Product
+from .models import Category, Brand, Product, ProductLine
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -78,3 +78,14 @@ class ProductSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+
+class ProductLineSerializer(serializers.ModelSerializer):
+    """Serializer for product lines."""
+
+    product = ProductSerializer(required=True)
+
+    class Meta:
+        model = ProductLine
+        fields = ['id', 'sku', 'product', 'price', 'stock_qty', 'is_active']
+        read_only_fields = ['id', 'sku']
