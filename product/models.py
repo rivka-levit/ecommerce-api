@@ -21,6 +21,10 @@ class Category(MPTTModel):
         related_name='children'
     )
 
+    class Meta:
+        verbose_name = 'category'
+        verbose_name_plural = 'categories'
+
     class MPTTMeta:
         order_insertion_by = ['name']
 
@@ -70,3 +74,24 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ProductLine(models.Model):
+    """Product line object."""
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    price = models.DecimalField(max_digits=5, decimal_places=2)
+    sku = models.CharField(max_length=255)
+    stock_qty = models.IntegerField()
+    product = models.ForeignKey(
+        to=Product,
+        on_delete=models.CASCADE,
+        related_name='product_lines'
+    )
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'product line'
+        verbose_name_plural = 'product lines'
+
+    def __str__(self):
+        return self.sku
