@@ -8,7 +8,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from product.models import Product, Category
+from product.models import Product, Category, Brand
 from product.serializers import ProductSerializer
 
 PRODUCTS_URL = reverse('product-list')
@@ -144,7 +144,7 @@ class TestProduct(TestCase):
         exists = Product.objects.filter(id=product.id).exists()
         self.assertFalse(exists)
 
-    def test_list_products_by_category(self):
+    def test_filter_products_by_category(self):
         """Test listing products and filtering it by category."""
         category1 = Category.objects.create(user=self.user, name='Cats')
         category2 = Category.objects.create(user=self.user, name='Dogs')
@@ -159,3 +159,19 @@ class TestProduct(TestCase):
         self.assertEqual(len(r.data), 2)
         for item in r.data:
             self.assertEqual(item['category']['name'], category1.name)
+
+    def test_filter_products_by_brand(self):
+        """Test listing products and filtering it by brand."""
+        brand1 = Brand.objects.create(user=self.user, name='Nike')
+        brand2 = Brand.objects.create(user=self.user, name='Adidas')
+        create_product(user=self.user, brand=brand2)
+        create_product(user=self.user, brand=brand2)
+        create_product(user=self.user, brand=brand1)
+
+        params = {'brand': f'{brand2.name}'}
+        r = self.client.get(PRODUCTS_URL, params)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(r.data), 2)
+        for item in r.data:
+            self.assertEqual(item['brand']['name'], brand2.name)
