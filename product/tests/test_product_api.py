@@ -158,4 +158,4 @@ class TestProduct(TestCase):
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(len(r.data), 2)
         for item in r.data:
-            self.assertEqual(item['category'], category1)
+            self.assertEqual(item['category']['name'], category1.name)

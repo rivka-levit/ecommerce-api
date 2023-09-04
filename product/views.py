@@ -5,6 +5,13 @@ from rest_framework import viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiParameter,
+    OpenApiTypes
+)
+
 from .models import Category, Brand, Product
 from product import serializers
 
@@ -35,7 +42,31 @@ class BrandViewSet(BaseStoreViewSet):
     serializer_class = serializers.BrandSerializer
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'category',
+                OpenApiTypes.STR,
+                description='Category name',
+                required=False
+            )
+        ]
+    )
+)
 class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
     queryset = Product.objects.all()
     serializer_class = serializers.ProductSerializer
+
+    def get_queryset(self):
+        """Retrieve products, filtering them by category."""
+        category_name = self.request.query_params.get('category')
+        queryset = super().get_queryset()
+
+        if category_name:
+            queryset = queryset.filter(
+                category__name=category_name
+            ).order_by('-id').distinct()
+
+        return queryset
