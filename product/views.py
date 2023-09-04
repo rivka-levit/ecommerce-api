@@ -64,6 +64,7 @@ class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
     queryset = Product.objects.all()
     serializer_class = serializers.ProductSerializer
+    lookup_field = 'slug'
 
     def get_queryset(self):
         """Retrieve products, filtering them by category."""

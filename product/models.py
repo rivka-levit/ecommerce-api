@@ -51,7 +51,7 @@ class Brand(models.Model):
 class Product(models.Model):
     """Product object."""
     name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=255, unique=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True)
     user = models.ForeignKey(
         to=User,
