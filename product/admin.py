@@ -18,6 +18,7 @@ class BrandAdmin(admin.ModelAdmin):
 
 class ProductLineInline(admin.TabularInline):
     model = ProductLine
+    fields = ['sku', 'price', 'stock_qty', 'is_active']
 
 
 @admin.register(Product)
