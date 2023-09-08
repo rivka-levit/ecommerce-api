@@ -8,7 +8,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from product.models import Product, Category, Brand
+from product.models import Product, Category, Brand, ProductLine
 from product.serializers import ProductSerializer
 
 PRODUCTS_URL = reverse('product-list')
@@ -30,7 +30,7 @@ def create_product(user, **params) -> Product:
     return Product.objects.create(user=user, **defaults)
 
 
-class TestProduct(TestCase):
+class TestProductApi(TestCase):
     """Tests for product APIs."""
     def setUp(self) -> None:
         self.client = APIClient()
@@ -175,3 +175,19 @@ class TestProduct(TestCase):
         self.assertEqual(len(r.data), 2)
         for item in r.data:
             self.assertEqual(item['brand']['name'], brand2.name)
+
+    def test_retrieve_product_with_product_lines(self):
+        """Test retrieving product liens when getting a product."""
+        product = create_product(user=self.user)
+        ProductLine.objects.create(
+            user=self.user,
+            product=product,
+            sku=123,
+            price=25.80,
+            stock_qty=5
+        )
+
+        r = self.client.get(PRODUCTS_URL)
+        self.assertEqual(len(r.data), 1)
+        pr = r.data[0]
+        self.assertEqual(len(pr['product_lines']), 1)

@@ -62,7 +62,7 @@ class BrandViewSet(BaseStoreViewSet):
 )
 class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
-    queryset = Product.objects.all()
+    queryset = Product.objects.all().select_related('category', 'brand')
     serializer_class = serializers.ProductSerializer
     lookup_field = 'slug'
 

@@ -22,16 +22,29 @@ class BrandSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class ProductLineSerializer(serializers.ModelSerializer):
+    """Serializer for product lines."""
+
+    class Meta:
+        model = ProductLine
+        fields = ['id', 'sku', 'product', 'price', 'stock_qty', 'is_active']
+        read_only_fields = ['id']
+
+
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for products."""
     brand = BrandSerializer(required=False)
     category = CategorySerializer(required=False)
+    product_lines = serializers.SerializerMethodField(
+        'get_related_product_lines',
+        required=False
+    )
 
     class Meta:
         model = Product
         fields = ['name', 'description', 'slug', 'brand', 'category',
-                  'is_digital', 'is_active', 'created_at']
-        read_only_fields = ['id']
+                  'product_lines', 'is_digital', 'is_active', 'created_at']
+        read_only_fields = ['slug']
 
     def _get_or_create_and_assign_brand(self, brand, product):
         auth_user = self.context['request'].user
@@ -52,6 +65,13 @@ class ProductSerializer(serializers.ModelSerializer):
             )
             product.category = category_obj
             product.save()
+
+    def get_related_product_lines(self, product):
+        """Get the product lines of particular product"""
+
+        qs = product.product_lines.filter(is_active=True).order_by('-id')
+
+        return ProductLineSerializer(qs, many=True).data
 
     def create(self, validated_data):
         """Create a product."""
@@ -78,14 +98,3 @@ class ProductSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-
-
-class ProductLineSerializer(serializers.ModelSerializer):
-    """Serializer for product lines."""
-
-    product = ProductSerializer(required=True)
-
-    class Meta:
-        model = ProductLine
-        fields = ['id', 'sku', 'product', 'price', 'stock_qty', 'is_active']
-        read_only_fields = ['id', 'sku']
