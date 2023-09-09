@@ -43,7 +43,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['name', 'description', 'slug', 'brand', 'category',
-                  'product_lines', 'is_digital', 'is_active', 'created_at']
+                  'is_digital', 'is_active', 'created_at', 'product_lines']
         read_only_fields = ['slug']
 
     def _get_or_create_and_assign_brand(self, brand, product):

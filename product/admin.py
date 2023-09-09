@@ -18,7 +18,8 @@ class BrandAdmin(admin.ModelAdmin):
 
 class ProductLineInline(admin.TabularInline):
     model = ProductLine
-    fields = ['sku', 'price', 'stock_qty', 'is_active']
+    fields = ['user', 'sku', 'price', 'stock_qty', 'is_active']
+    extra = 0
 
 
 @admin.register(Product)
