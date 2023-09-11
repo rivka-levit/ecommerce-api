@@ -93,3 +93,24 @@ class ProductLineApiTests(TestCase):
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         product_line.refresh_from_db()
         self.assertEqual(product_line.sku, payload['sku'])
+
+    def test_product_line_delete_successful(self):
+        """Test deleting a product line."""
+
+        product = create_product(self.user)
+        product_line = create_product_line(self.user, product, 'bamboo')
+
+        url = reverse(
+            'product-line-delete',
+            args=[product.slug, product_line.sku]
+        )
+
+        r = self.client.delete(url)
+
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        exists = ProductLine.objects.filter(
+            user=self.user,
+            product=product,
+            sku=product_line.sku
+        ).exists()
+        self.assertFalse(exists)

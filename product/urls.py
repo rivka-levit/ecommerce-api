@@ -16,12 +16,17 @@ urlpatterns = [
     path('', include(router.urls)),
     path(
         '<slug:product_slug>/product-line/create/',
-        views.ProductLineView.as_view(),
+        views.CreateProductLineView.as_view(),
         name='product-line-create'
     ),
     path(
-        '<slug:product_slug>/product-line/<sku>/',
-        views.ProductLineView.as_view(),
+        '<slug:product_slug>/product-line/update/<sku>/',
+        views.UpdateProductLineView.as_view(),
         name='product-line-update'
+    ),
+    path(
+        '<slug:product_slug>/product-line/delete/<sku>/',
+        views.DeleteProductLineView.as_view(),
+        name='product-line-delete'
     ),
 ]

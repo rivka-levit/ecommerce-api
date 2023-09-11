@@ -93,9 +93,11 @@ class ProductViewSet(BaseStoreViewSet):
 
 @extend_schema(
     request=serializers.ProductLineSerializer,
-    responses={201: serializers.ProductLineSerializer}
+    responses={
+        201: serializers.ProductLineSerializer
+    }
 )
-class ProductLineView(APIView):
+class CreateProductLineView(APIView):
     """View for managing product line APIs."""
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -128,6 +130,16 @@ class ProductLineView(APIView):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+
+@extend_schema(
+    request=serializers.ProductLineSerializer,
+    responses={
+        200: serializers.ProductLineSerializer
+    }
+)
+class UpdateProductLineView(APIView):
+    """View for update a product lien."""
+
     def patch(self, request, product_slug, sku):
         """Partial update of a product line."""
 
@@ -152,3 +164,24 @@ class ProductLineView(APIView):
             serializers.ProductLineSerializer(product_line).data,
             status=status.HTTP_200_OK
         )
+
+
+class DeleteProductLineView(APIView):
+    """View for deleting a product line."""
+
+    def delete(self, request, product_slug, sku):
+        """Delete a product line."""
+
+        auth_user = self.request.user
+
+        product = get_object_or_404(Product, user=auth_user, slug=product_slug)
+
+        product_line = get_object_or_404(
+            ProductLine,
+            user=auth_user,
+            product=product,
+            sku=sku
+        )
+        product_line.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
