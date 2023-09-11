@@ -11,14 +11,6 @@ from rest_framework.test import APIClient
 from product.models import Product, ProductLine
 from product.serializers import ProductLineSerializer
 
-# PRODUCT_LINES_URL = reverse('product-line-list')
-
-
-def create_url(product_slug):
-    """Return the url of a particular product line."""
-
-    return reverse('product-line-create', args=[product_slug])
-
 
 def create_product(user, **kwargs):
     """Create a sample product."""

@@ -1,7 +1,7 @@
 """
 Views for product APIs.
 """
-from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets, status
 from rest_framework.authentication import TokenAuthentication
@@ -101,22 +101,12 @@ class ProductLineView(APIView):
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
 
-    def _get_product(self, user, product_slug) -> Product | Response:
-        """Return product or error response."""
-        try:
-            product = Product.objects.get(user=user, slug=product_slug)
-        except Product.DoesNotExist:
-            return Response(
-                {'message': 'Invalid product slug. Product does not exist.'}
-            )
-        return product
-
     def post(self, request, product_slug):
         """Create a new product line for a particular product."""
 
         auth_user = self.request.user
 
-        product = self._get_product(auth_user, product_slug)
+        product = get_object_or_404(Product, user=auth_user, slug=product_slug)
 
         serializer = serializers.ProductLineSerializer(data=request.data)
         if serializer.is_valid():
@@ -143,9 +133,10 @@ class ProductLineView(APIView):
 
         auth_user = self.request.user
 
-        product = Product.objects.get(user=auth_user, slug=product_slug)
+        product = get_object_or_404(Product, user=auth_user, slug=product_slug)
 
-        product_line = ProductLine.objects.get(
+        product_line = get_object_or_404(
+            ProductLine,
             user=auth_user,
             product=product,
             sku=sku
