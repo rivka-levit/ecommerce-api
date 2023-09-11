@@ -66,8 +66,7 @@ class ProductLineApiTests(TestCase):
         payload = {
             'sku': 'red',
             'price': 53,
-            'stock_qty': 10,
-            'product': product.id
+            'stock_qty': 10
         }
 
         url = create_url(product.slug)

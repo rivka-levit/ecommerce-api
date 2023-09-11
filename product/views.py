@@ -89,6 +89,10 @@ class ProductViewSet(BaseStoreViewSet):
         return queryset
 
 
+@extend_schema(
+    request=serializers.ProductLineSerializer,
+    responses={201: serializers.ProductLineSerializer}
+)
 class CreateProductLineView(APIView):
     """View for managing product line APIs."""
     authentication_classes = [TokenAuthentication]
