@@ -1,6 +1,8 @@
 """
 Views for product APIs.
 """
+from django.core.exceptions import ObjectDoesNotExist
+
 from rest_framework import viewsets, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -93,15 +95,29 @@ class ProductViewSet(BaseStoreViewSet):
     request=serializers.ProductLineSerializer,
     responses={201: serializers.ProductLineSerializer}
 )
-class CreateProductLineView(APIView):
+class ProductLineView(APIView):
     """View for managing product line APIs."""
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     renderer_classes = [JSONRenderer]
 
+    def _get_product(self, user, product_slug) -> Product | Response:
+        """Return product or error response."""
+        try:
+            product = Product.objects.get(user=user, slug=product_slug)
+        except Product.DoesNotExist:
+            return Response(
+                {'message': 'Invalid product slug. Product does not exist.'}
+            )
+        return product
+
     def post(self, request, product_slug):
+        """Create a new product line for a particular product."""
+
         auth_user = self.request.user
-        product = Product.objects.get(user=auth_user, slug=product_slug)
+
+        product = self._get_product(auth_user, product_slug)
+
         serializer = serializers.ProductLineSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=auth_user, product=product)
@@ -120,4 +136,28 @@ class CreateProductLineView(APIView):
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
+        )
+
+    def patch(self, request, product_slug, sku):
+        """Partial update of a product line."""
+
+        auth_user = self.request.user
+
+        product = Product.objects.get(user=auth_user, slug=product_slug)
+
+        product_line = ProductLine.objects.get(
+            user=auth_user,
+            product=product,
+            sku=sku
+        )
+
+        # Update all the fields that have been passed with the request.
+        for k, v in request.data.items():
+            setattr(product_line, k, v)
+
+        product_line.save()
+
+        return Response(
+            serializers.ProductLineSerializer(product_line).data,
+            status=status.HTTP_200_OK
         )

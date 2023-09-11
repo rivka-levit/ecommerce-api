@@ -69,7 +69,7 @@ class ProductLineApiTests(TestCase):
             'stock_qty': 10
         }
 
-        url = create_url(product.slug)
+        url = reverse('product-line-create', args=[product.slug])
         r = self.client.post(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
@@ -82,3 +82,22 @@ class ProductLineApiTests(TestCase):
 
         self.assertEqual(r.data, serializer.data)
 
+    def test_product_line_update_successful(self):
+        """Test updating a product line of a particular product."""
+        product = create_product(self.user)
+        product_line = create_product_line(self.user, product, 'beige')
+
+        payload = {
+            'sku': 'aquamarine'
+        }
+
+        url = reverse(
+            'product-line-update',
+            args=[product.slug,
+                  product_line.sku]
+        )
+        r = self.client.patch(url, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        product_line.refresh_from_db()
+        self.assertEqual(product_line.sku, payload['sku'])
