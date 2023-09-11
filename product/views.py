@@ -1,9 +1,12 @@
 """
 Views for product APIs.
 """
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.renderers import JSONRenderer
 
 from drf_spectacular.utils import (
     extend_schema,
@@ -12,7 +15,7 @@ from drf_spectacular.utils import (
     OpenApiTypes
 )
 
-from .models import Category, Brand, Product
+from .models import Category, Brand, Product, ProductLine
 from product import serializers
 
 
@@ -84,3 +87,33 @@ class ProductViewSet(BaseStoreViewSet):
             ).order_by('-id').distinct()
 
         return queryset
+
+
+class CreateProductLineView(APIView):
+    """View for managing product line APIs."""
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    renderer_classes = [JSONRenderer]
+
+    def post(self, request, product_slug):
+        auth_user = self.request.user
+        product = Product.objects.get(user=auth_user, slug=product_slug)
+        serializer = serializers.ProductLineSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=auth_user, product=product)
+
+            product_line = ProductLine.objects.get(
+                user=auth_user,
+                product=product,
+                sku=serializer.data['sku']
+            )
+
+            return Response(
+                serializers.ProductLineSerializer(product_line).data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )

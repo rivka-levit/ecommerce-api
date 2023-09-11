@@ -9,14 +9,15 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from product.models import Product, ProductLine
+from product.serializers import ProductLineSerializer
 
-PRODUCT_LINES_URL = reverse('product-line-list')
+# PRODUCT_LINES_URL = reverse('product-line-list')
 
 
-def detail_url(obj_id):
+def create_url(product_slug):
     """Return the url of a particular product line."""
 
-    return reverse('product-line-detail', args=[obj_id])
+    return reverse('product-line-create', args=[product_slug])
 
 
 def create_product(user, **kwargs):
@@ -58,22 +59,27 @@ class ProductLineApiTests(TestCase):
         )
         self.client.force_authenticate(self.user)
 
-    def test_product_line_list_without_product_fails(self):
-        """Test retrieving product lines fails for without product."""
-
-        r = self.client.get(PRODUCT_LINES_URL)
-
-        self.assertEqual(r.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_product_line_list_with_product_success(self):
-        """Test retrieving product liens assigned to a product successful."""
-
+    def test_product_line_create_successful(self):
+        """Test creating a product line successfully."""
         product = create_product(self.user)
-        create_product_line(self.user, product, 'red')
-        create_product_line(self.user, product, 'blue')
-        params = {'product': product.slug}
 
-        r = self.client.get(PRODUCT_LINES_URL, params)
+        payload = {
+            'sku': 'red',
+            'price': 53,
+            'stock_qty': 10,
+            'product': product.id
+        }
 
-        self.assertEqual(r.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(r.data), 2)
+        url = create_url(product.slug)
+        r = self.client.post(url, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+
+        product_line = ProductLine.objects.get(
+            sku=payload['sku'],
+            product=product
+        )
+        serializer = ProductLineSerializer(product_line)
+
+        self.assertEqual(r.data, serializer.data)
+

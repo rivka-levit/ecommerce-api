@@ -13,5 +13,10 @@ router.register('brands', views.BrandViewSet, basename='brand')
 router.register('products', views.ProductViewSet, basename='product')
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('', include(router.urls)),
+    path(
+        '<slug:product_slug>/product-line/create/',
+        views.CreateProductLineView.as_view(),
+        name='product-line-create'
+    ),
 ]
