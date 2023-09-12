@@ -2,8 +2,6 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 
-from datetime import datetime
-
 from product import models
 
 
@@ -23,6 +21,18 @@ def create_product(**params) -> models.Product:
     product = models.Product.objects.create(**defaults)
 
     return product
+
+
+def create_product_line(**params) -> models.ProductLine:
+    """Create and return a sample product line."""
+    defaults = {
+        'sku': 'sample_sku',
+        'price': '100',
+        'stock_qty': 35
+    }
+    defaults.update(**params)
+
+    return models.ProductLine.objects.create(**defaults)
 
 
 class ModelTests(TestCase):
@@ -160,3 +170,31 @@ class ModelTests(TestCase):
 
         self.assertEqual(str(product_line), data['sku'])
         self.assertEqual(product_line.stock_qty, data['stock_qty'])
+
+
+class ProductLineModelTests(TestCase):
+    """Tests for the ProductLine model."""
+
+    def setUp(self) -> None:
+        self.user = create_user()
+        self.product = create_product(user=self.user)
+
+    def test_create_product_line_ordering_auto_add(self):
+        """T
+        est adding the order number to the ordering fild automatically,
+        when creating a product line
+        """
+
+        pl1 = create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='first'
+        )
+        pl2 = create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='second'
+        )
+
+        self.assertEqual(pl1.ordering, 1)
+        self.assertEqual(pl2.ordering, 2)
