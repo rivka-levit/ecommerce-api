@@ -5,6 +5,8 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 from user.models import User
 
+from product.fields import OrderField
+
 from datetime import datetime
 
 
@@ -89,6 +91,7 @@ class Product(models.Model):
 class ProductLine(models.Model):
     """Product line object."""
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    ordering = OrderField(to_field='product', blank=True, null=True)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     sku = models.CharField(max_length=255)
     stock_qty = models.IntegerField()
