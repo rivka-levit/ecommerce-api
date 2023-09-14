@@ -197,3 +197,16 @@ class ProductLineModelTests(TestCase):
 
         self.assertEqual(pl1.ordering, 1)
         self.assertEqual(pl2.ordering, 2)
+
+    def test_create_product_line_add_ordering_manually(self):
+        """Test adding custom order number successfully when creating
+        a product line."""
+
+        pl1 = create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='first',
+            ordering=3
+        )
+
+        self.assertEqual(pl1.ordering, 3)
