@@ -183,7 +183,7 @@ class TestProductApi(TestCase):
             user=self.user,
             product=product,
             sku=123,
-            price=25.80,
+            price='25.80',
             stock_qty=5
         )
 

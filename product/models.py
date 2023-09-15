@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from django.core.exceptions import ValidationError
 
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -108,3 +109,22 @@ class ProductLine(models.Model):
 
     def __str__(self):
         return self.sku
+
+    def clean(self):
+        """Check if the ordering number passed on creating product line is
+        unique for related product."""
+
+        qs = ProductLine.objects.filter(
+            product=self.product
+        ).exclude(pk=self.pk)
+
+        for obj in qs:
+            if self.ordering == obj.ordering:
+                raise ValidationError(
+                    'The ordering number of a product line must be unique '
+                    'for this particular product.'
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super(ProductLine, self).save(*args, **kwargs)
