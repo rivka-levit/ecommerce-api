@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from product import models
 
@@ -210,3 +211,25 @@ class ProductLineModelTests(TestCase):
         )
 
         self.assertEqual(pl1.ordering, 3)
+
+    def test_not_unique_ordering_raise_error(self):
+        """Test raising ValidationError if creating a product line with
+        not unique ordering number."""
+
+        create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='first',
+            ordering=1
+        )
+
+        with self.assertRaises(ValidationError):
+            create_product_line(
+                product=self.product,
+                user=self.user,
+                sku='second',
+                ordering=1
+            )
+
+        qs = self.product.product_lines.all()
+        self.assertEqual(len(qs), 1)
