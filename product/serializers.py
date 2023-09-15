@@ -27,7 +27,7 @@ class ProductLineSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductLine
-        fields = ['sku', 'price', 'stock_qty', 'is_active']
+        fields = ['sku', 'ordering', 'price', 'stock_qty', 'is_active']
         read_only_fields = ['id']
 
 

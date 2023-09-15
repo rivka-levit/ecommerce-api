@@ -113,3 +113,20 @@ class ProductLineApiTests(TestCase):
             sku=product_line.sku
         ).exists()
         self.assertFalse(exists)
+
+    def test_create_product_line_with_ordering_number(self):
+        """Create and retrieve ordering number automatically when creating
+        a product line."""
+
+        payload = {
+            'sku': 'compose-5',
+            'price': '538',
+            'stock_qty': 15
+        }
+
+        url = reverse('product-line-create', args=[self.product.slug])
+        r = self.client.post(url, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertIn('ordering', r.data)
+        self.assertEqual(r.data['ordering'], 1)
