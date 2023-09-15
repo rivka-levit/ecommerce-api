@@ -50,10 +50,10 @@ class ProductLineApiTests(TestCase):
             password='test_pass123'
         )
         self.client.force_authenticate(self.user)
+        self.product = create_product(self.user)
 
     def test_product_line_create_successful(self):
         """Test creating a product line successfully."""
-        product = create_product(self.user)
 
         payload = {
             'sku': 'red',
@@ -61,14 +61,14 @@ class ProductLineApiTests(TestCase):
             'stock_qty': 10
         }
 
-        url = reverse('product-line-create', args=[product.slug])
+        url = reverse('product-line-create', args=[self.product.slug])
         r = self.client.post(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
         product_line = ProductLine.objects.get(
             sku=payload['sku'],
-            product=product
+            product=self.product
         )
         serializer = ProductLineSerializer(product_line)
 
@@ -76,8 +76,8 @@ class ProductLineApiTests(TestCase):
 
     def test_product_line_update_successful(self):
         """Test updating a product line of a particular product."""
-        product = create_product(self.user)
-        product_line = create_product_line(self.user, product, 'beige')
+
+        product_line = create_product_line(self.user, self.product, 'beige')
 
         payload = {
             'sku': 'aquamarine'
@@ -85,7 +85,7 @@ class ProductLineApiTests(TestCase):
 
         url = reverse(
             'product-line-update',
-            args=[product.slug,
+            args=[self.product.slug,
                   product_line.sku]
         )
         r = self.client.patch(url, payload)
@@ -97,12 +97,11 @@ class ProductLineApiTests(TestCase):
     def test_product_line_delete_successful(self):
         """Test deleting a product line."""
 
-        product = create_product(self.user)
-        product_line = create_product_line(self.user, product, 'bamboo')
+        product_line = create_product_line(self.user, self.product, 'bamboo')
 
         url = reverse(
             'product-line-delete',
-            args=[product.slug, product_line.sku]
+            args=[self.product.slug, product_line.sku]
         )
 
         r = self.client.delete(url)
@@ -110,7 +109,7 @@ class ProductLineApiTests(TestCase):
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
         exists = ProductLine.objects.filter(
             user=self.user,
-            product=product,
+            product=self.product,
             sku=product_line.sku
         ).exists()
         self.assertFalse(exists)
