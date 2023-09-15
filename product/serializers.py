@@ -69,7 +69,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_related_product_lines(self, product):
         """Get the product lines of particular product"""
 
-        qs = product.product_lines.filter(is_active=True).order_by('-id')
+        qs = product.product_lines.filter(is_active=True).order_by('ordering')
 
         return ProductLineSerializer(qs, many=True).data
 
