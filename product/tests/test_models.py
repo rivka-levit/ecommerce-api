@@ -233,3 +233,4 @@ class ProductLineModelTests(TestCase):
 
         qs = self.product.product_lines.all()
         self.assertEqual(len(qs), 1)
+        self.assertEqual(qs[0].sku, 'first')
