@@ -1,6 +1,8 @@
 """
 Serializers for product APIs.
 """
+from django.shortcuts import get_object_or_404
+
 from rest_framework import serializers
 
 from .models import Category, Brand, Product, ProductLine
@@ -27,8 +29,37 @@ class ProductLineSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductLine
-        fields = ['sku', 'ordering', 'price', 'stock_qty', 'is_active']
+        fields = ['id', 'sku', 'ordering', 'price', 'stock_qty', 'is_active']
         read_only_fields = ['id']
+
+
+class CreateProductLineSerializer(serializers.ModelSerializer):
+    """Serializer for creating product lines."""
+
+    product_slug = serializers.CharField(source='product.slug', required=True)
+
+    class Meta:
+        model = ProductLine
+        fields = ['product_slug', 'sku', 'ordering', 'price', 'stock_qty',
+                  'is_active']
+        read_only_fields = ['id']
+
+    def create(self, validated_data):
+        auth_user = self.context['request'].user
+
+        product_slug = validated_data.pop('product')['slug']
+        product = get_object_or_404(
+            Product,
+            slug=product_slug,
+            user=auth_user
+        )
+
+        product_line = ProductLine.objects.create(
+            product=product,
+            **validated_data
+        )
+
+        return product_line
 
 
 class ProductSerializer(serializers.ModelSerializer):

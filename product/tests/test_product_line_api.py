@@ -10,7 +10,13 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from product.models import Product, ProductLine
-from product.serializers import ProductLineSerializer
+from product.serializers import ProductLineSerializer, CreateProductLineSerializer
+
+PRODUCT_LINES_URL = reverse('product-line-list')
+
+
+def detail_url(item_id):
+    return reverse('product-line-detail', args=[item_id])
 
 
 def create_url(product_slug):
@@ -62,13 +68,13 @@ class ProductLineApiTests(TestCase):
         """Test creating a product line successfully."""
 
         payload = {
+            'product_slug': self.product.slug,
             'sku': 'red',
             'price': 53,
             'stock_qty': 10
         }
 
-        url = create_url(self.product.slug)
-        r = self.client.post(url, payload)
+        r = self.client.post(PRODUCT_LINES_URL, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
@@ -76,7 +82,7 @@ class ProductLineApiTests(TestCase):
             sku=payload['sku'],
             product=self.product
         )
-        serializer = ProductLineSerializer(product_line)
+        serializer = CreateProductLineSerializer(product_line)
 
         self.assertEqual(r.data, serializer.data)
 
@@ -89,11 +95,7 @@ class ProductLineApiTests(TestCase):
             'sku': 'aquamarine'
         }
 
-        url = reverse(
-            'product-line-update',
-            args=[self.product.slug,
-                  product_line.sku]
-        )
+        url = detail_url(product_line.id)
         r = self.client.patch(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -105,10 +107,7 @@ class ProductLineApiTests(TestCase):
 
         product_line = create_product_line(self.user, self.product, 'bamboo')
 
-        url = reverse(
-            'product-line-delete',
-            args=[self.product.slug, product_line.sku]
-        )
+        url = detail_url(product_line.id)
 
         r = self.client.delete(url)
 
@@ -125,13 +124,13 @@ class ProductLineApiTests(TestCase):
         a product line."""
 
         payload = {
+            'product_slug': self.product.slug,
             'sku': 'compose-5',
             'price': '538',
             'stock_qty': 15
         }
 
-        url = create_url(self.product.slug)
-        r = self.client.post(url, payload)
+        r = self.client.post(PRODUCT_LINES_URL, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertIn('ordering', r.data)
@@ -141,14 +140,14 @@ class ProductLineApiTests(TestCase):
         """Test creating a product line with custom ordering number."""
 
         payload = {
+            'product_slug': self.product.slug,
             'sku': 'krak-krak-8',
+            'ordering': 5,
             'price': '58',
             'stock_qty': 3,
-            'ordering': 5
         }
 
-        url = create_url(self.product.slug)
-        r = self.client.post(url, payload)
+        r = self.client.post(PRODUCT_LINES_URL, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertEqual(r.data['ordering'], payload['ordering'])
@@ -161,13 +160,12 @@ class ProductLineApiTests(TestCase):
 
         create_product_line(self.user, self.product, 'some_sku', ordering=3)
         payload = {
+            'product_slug': self.product.slug,
             'sku': 'krak-krak-8',
             'price': '300',
             'stock_qty': 38,
             'ordering': 3
         }
 
-        url = create_url(self.product.slug)
-
         with self.assertRaises(ValidationError):
-            self.client.post(url, payload)
+            self.client.post(PRODUCT_LINES_URL, payload)
