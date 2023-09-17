@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Brand, Product
+from .models import Category, Brand, Product, ProductLine
 
 
 @admin.register(Category)
@@ -16,8 +16,15 @@ class BrandAdmin(admin.ModelAdmin):
     list_editable = ['is_active']
 
 
+class ProductLineInline(admin.TabularInline):
+    model = ProductLine
+    fields = ['user', 'sku', 'price', 'stock_qty', 'is_active']
+    extra = 0
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['name', 'brand', 'category', 'created_at', 'is_active']
     readonly_fields = ['id', 'created_at']
     list_editable = ['is_active']
+    inlines = [ProductLineInline]

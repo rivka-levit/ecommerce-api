@@ -1,5 +1,6 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 from product import models
 
@@ -20,6 +21,18 @@ def create_product(**params) -> models.Product:
     product = models.Product.objects.create(**defaults)
 
     return product
+
+
+def create_product_line(**params) -> models.ProductLine:
+    """Create and return a sample product line."""
+    defaults = {
+        'sku': 'sample_sku',
+        'price': '100',
+        'stock_qty': 35
+    }
+    defaults.update(**params)
+
+    return models.ProductLine.objects.create(**defaults)
 
 
 class ModelTests(TestCase):
@@ -74,6 +87,31 @@ class ModelTests(TestCase):
             parent_category.refresh_from_db()
             self.assertEqual(parent_category.children.count(), 3)
 
+    def test_delete_parent_category_set_null_to_children(self):
+        """Test deleting a category and assign None value to its children"""
+
+        parent_category = models.Category.objects.create(
+            user=self.user,
+            name='Parent'
+        )
+        child1 = models.Category.objects.create(
+            user=self.user,
+            name='ch1',
+            parent=parent_category
+        )
+        child2 = models.Category.objects.create(
+            user=self.user,
+            name='ch2',
+            parent=parent_category
+        )
+
+        parent_category.delete()
+
+        child1.refresh_from_db()
+        child2.refresh_from_db()
+        self.assertEqual(child1.parent, None)
+        self.assertEqual(child2.parent, None)
+
     def test_create_brand(self):
         brand = models.Brand.objects.create(name='Nike', user=self.user)
 
@@ -99,3 +137,100 @@ class ModelTests(TestCase):
 
         self.assertFalse(product.is_digital)
         self.assertTrue(product.is_active)
+
+    def test_create_product_generate_slug(self):
+        """Test generating slug automatically when a product is created."""
+        product = create_product(user=self.user)
+
+        self.assertTrue(product.slug)
+
+    def test_create_product_line_success(self):
+        """Test creating a product line for a product successful."""
+
+        brand = models.Brand.objects.create(name='Desigual', user=self.user)
+        category = models.Category.objects.create(name='Bags', user=self.user)
+
+        product = models.Product.objects.create(
+            name='Fashion bag',
+            description='',
+            user=self.user,
+            brand=brand,
+            category=category
+        )
+
+        data = {
+            'user': self.user,
+            'price': '580.00',
+            'sku': 'bag9877wer',
+            'stock_qty': 38,
+            'product': product
+        }
+
+        product_line = models.ProductLine.objects.create(**data)
+
+        self.assertEqual(str(product_line), data['sku'])
+        self.assertEqual(product_line.stock_qty, data['stock_qty'])
+
+
+class ProductLineModelTests(TestCase):
+    """Tests for the ProductLine model."""
+
+    def setUp(self) -> None:
+        self.user = create_user()
+        self.product = create_product(user=self.user)
+
+    def test_create_product_line_ordering_auto_add(self):
+        """T
+        est adding the order number to the ordering fild automatically,
+        when creating a product line
+        """
+
+        pl1 = create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='first'
+        )
+        pl2 = create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='second'
+        )
+
+        self.assertEqual(pl1.ordering, 1)
+        self.assertEqual(pl2.ordering, 2)
+
+    def test_create_product_line_add_ordering_manually(self):
+        """Test adding custom order number successfully when creating
+        a product line."""
+
+        pl1 = create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='first',
+            ordering=3
+        )
+
+        self.assertEqual(pl1.ordering, 3)
+
+    def test_not_unique_ordering_raise_error(self):
+        """Test raising ValidationError if creating a product line with
+        not unique ordering number."""
+
+        create_product_line(
+            product=self.product,
+            user=self.user,
+            sku='first',
+            ordering=1
+        )
+
+        with self.assertRaises(ValidationError):
+            create_product_line(
+                product=self.product,
+                user=self.user,
+                sku='second',
+                ordering=1
+            )
+
+        qs = self.product.product_lines.all()
+        self.assertEqual(len(qs), 1)
+        self.assertEqual(qs[0].sku, 'first')
