@@ -3,6 +3,7 @@ Tests for product lines APIs.
 """
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from rest_framework import status
@@ -10,6 +11,11 @@ from rest_framework.test import APIClient
 
 from product.models import Product, ProductLine
 from product.serializers import ProductLineSerializer
+
+
+def create_url(product_slug):
+    """Return the url for creating a product line for a particular product."""
+    return reverse('product-line-create', args=[product_slug])
 
 
 def create_product(user, **kwargs):
@@ -61,7 +67,7 @@ class ProductLineApiTests(TestCase):
             'stock_qty': 10
         }
 
-        url = reverse('product-line-create', args=[self.product.slug])
+        url = create_url(self.product.slug)
         r = self.client.post(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
@@ -124,9 +130,44 @@ class ProductLineApiTests(TestCase):
             'stock_qty': 15
         }
 
-        url = reverse('product-line-create', args=[self.product.slug])
+        url = create_url(self.product.slug)
         r = self.client.post(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertIn('ordering', r.data)
         self.assertEqual(r.data['ordering'], 1)
+
+    def test_create_product_line_custom_ordering_number_success(self):
+        """Test creating a product line with custom ordering number."""
+
+        payload = {
+            'sku': 'krak-krak-8',
+            'price': '58',
+            'stock_qty': 3,
+            'ordering': 5
+        }
+
+        url = create_url(self.product.slug)
+        r = self.client.post(url, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(r.data['ordering'], payload['ordering'])
+
+    def test_create_product_line_duplicate_ordering_error(self):
+        """
+        Test raising an error when creating a product line with duplicated
+        ordering number.
+        """
+
+        create_product_line(self.user, self.product, 'some_sku', ordering=3)
+        payload = {
+            'sku': 'krak-krak-8',
+            'price': '300',
+            'stock_qty': 38,
+            'ordering': 3
+        }
+
+        url = create_url(self.product.slug)
+
+        with self.assertRaises(ValidationError):
+            self.client.post(url, payload)
