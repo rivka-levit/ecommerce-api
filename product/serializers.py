@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from drf_spectacular.utils import extend_schema_field
 
-from .models import Category, Brand, Product, ProductLine
+from .models import Category, Brand, Product, ProductLine, ProductImage
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -26,12 +26,23 @@ class BrandSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    """Serializer for product images."""
+
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'alt_text', 'image', 'ordering']
+        read_only_fields = ['id']
+
+
 class ProductLineSerializer(serializers.ModelSerializer):
     """Serializer for product lines."""
+    images = ProductImageSerializer(many=True, required=False)
 
     class Meta:
         model = ProductLine
-        fields = ['id', 'sku', 'ordering', 'price', 'stock_qty', 'is_active']
+        fields = ['id', 'sku', 'ordering', 'price', 'stock_qty', 'is_active',
+                  'images']
         read_only_fields = ['id']
 
 
