@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers
 
+from drf_spectacular.utils import extend_schema_field
+
 from .models import Category, Brand, Product, ProductLine
 
 
@@ -97,6 +99,7 @@ class ProductSerializer(serializers.ModelSerializer):
             product.category = category_obj
             product.save()
 
+    @extend_schema_field(ProductLineSerializer(many=True))
     def get_related_product_lines(self, product):
         """Get the product lines of particular product"""
 

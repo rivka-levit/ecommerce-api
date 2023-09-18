@@ -97,8 +97,35 @@ class ProductViewSet(BaseStoreViewSet):
                 description='Filter by product.',
                 required=True
             )
+        ],
+    ),
+    update=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
         ]
-    )
+    ),
+    partial_update=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+    destroy=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
 )
 class ProductLineViewSet(
     mixins.DestroyModelMixin,
