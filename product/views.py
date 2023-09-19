@@ -1,6 +1,7 @@
 """
 Views for product APIs.
 """
+from django.db.models import Prefetch
 
 from rest_framework import viewsets, mixins
 from rest_framework.authentication import TokenAuthentication
@@ -64,7 +65,11 @@ class BrandViewSet(BaseStoreViewSet):
 )
 class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
-    queryset = Product.objects.all().select_related('category', 'brand')
+    queryset = Product.objects.all().select_related(
+        'category', 'brand'
+    ).prefetch_related(
+        Prefetch('product_lines__images')
+    )
     serializer_class = serializers.ProductSerializer
     lookup_field = 'slug'
 
