@@ -1,6 +1,9 @@
 """
 Tests for product lines APIs.
 """
+import tempfile
+import os
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -9,19 +12,21 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
+from PIL import Image
+
 from product.models import Product, ProductLine
 from product.serializers import ProductLineSerializer, CreateProductLineSerializer
 
 PRODUCT_LINES_URL = reverse('product-line-list')
+IMAGES_URL = reverse('image-list')
 
 
-def detail_url(item_id):
+def pl_detail_url(item_id):
     return reverse('product-line-detail', args=[item_id])
 
 
-def create_url(product_slug):
-    """Return the url for creating a product line for a particular product."""
-    return reverse('product-line-create', args=[product_slug])
+def image_detail_url(item_id):
+    return reverse('image-detail', args=[item_id])
 
 
 def create_product(user, **kwargs):
@@ -58,7 +63,7 @@ class ProductLineApiTests(TestCase):
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email='test_pr_liens_user@example.com',
+            email='test_pr_lines_user@example.com',
             password='test_pass123'
         )
         self.client.force_authenticate(self.user)
@@ -95,7 +100,7 @@ class ProductLineApiTests(TestCase):
             'sku': 'aquamarine'
         }
 
-        url = detail_url(product_line.id)
+        url = pl_detail_url(product_line.id)
         r = self.client.patch(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -107,7 +112,7 @@ class ProductLineApiTests(TestCase):
 
         product_line = create_product_line(self.user, self.product, 'bamboo')
 
-        url = detail_url(product_line.id)
+        url = pl_detail_url(product_line.id)
 
         r = self.client.delete(url)
 
@@ -169,3 +174,51 @@ class ProductLineApiTests(TestCase):
 
         with self.assertRaises(ValidationError):
             self.client.post(PRODUCT_LINES_URL, payload)
+
+
+class ProductImageApiTests(TestCase):
+    """Tests for product image APIs."""
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='test_image_user@example.com',
+            password='test_pass123'
+        )
+        self.client.force_authenticate(self.user)
+        self.product = create_product(self.user)
+        self.product_line = create_product_line(
+            self.user,
+            self.product,
+            'kappa-poo')
+
+    def tearDown(self) -> None:
+        images = self.product_line.images.all()
+        for image in images:
+            image.delete()
+
+    def test_create_upload_image(self):
+        """Test creating an image object and upload the image itself."""
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new(mode='RGB', size=(10, 10))
+            img.save(image_file, format='JPEG')
+            img.seek(0)
+
+            payload = {
+                'user': self.user,
+                'alt_text': 'some_image',
+                'image': image_file,
+                'product_line': self.product_line
+            }
+
+            r = self.client.post(IMAGES_URL, payload, format='multipart')
+
+        self.product_line.refresh_from_db()
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+        images = self.product_line.images.all()
+
+        self.assertEqual(len(images), 1)
+        self.assertTrue(os.path.exists(images[0].image.path))
