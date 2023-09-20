@@ -259,3 +259,20 @@ class ProductImageApiTests(TestCase):
         self.assertEqual(img.alt_text, payload['alt_text'])
         self.assertTrue(os.path.exists(img.image.path))
         self.assertNotEqual(old_path, img.image.path)
+
+    def test_remove_image(self):
+        """Test removing an image from product line."""
+
+        img = create_image(self.user, self.product_line)
+
+        url = image_detail_url(img.id)
+        r = self.client.delete(url)
+
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+
+        self.product_line.refresh_from_db()
+        images = self.product_line.images.filter(
+            user=self.user,
+            product_line=self.product_line
+        )
+        self.assertFalse(images.exists())
