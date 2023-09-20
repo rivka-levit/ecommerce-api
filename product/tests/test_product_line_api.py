@@ -14,8 +14,8 @@ from rest_framework.test import APIClient
 
 from PIL import Image
 
-from product.models import Product, ProductLine
-from product.serializers import ProductLineSerializer, CreateProductLineSerializer
+from product.models import Product, ProductLine, ProductImage
+from product.serializers import CreateProductLineSerializer
 
 PRODUCT_LINES_URL = reverse('product-line-list')
 IMAGES_URL = reverse('image-list')
@@ -25,8 +25,8 @@ def pl_detail_url(item_id):
     return reverse('product-line-detail', args=[item_id])
 
 
-def image_detail_url(item_id):
-    return reverse('image-detail', args=[item_id])
+def image_detail_url(image_id):
+    return reverse('image-detail', args=[image_id])
 
 
 def create_product(user, **kwargs):
@@ -53,6 +53,22 @@ def create_product_line(user, product, sku, **kwargs):
         user=user,
         product=product,
         sku=sku,
+        **defaults
+    )
+
+
+def create_image(user, product_line, **kwargs):
+    """Create and return a sample image object."""
+
+    defaults = {
+        'alt_text': 'some alternative text',
+        'image': 'test_imag.jpg',
+    }
+    defaults.update(**kwargs)
+
+    return ProductImage.objects.create(
+        user=user,
+        product_line=product_line,
         **defaults
     )
 
@@ -206,7 +222,6 @@ class ProductImageApiTests(TestCase):
             img.seek(0)
 
             payload = {
-                'user': self.user,
                 'alt_text': 'some_image',
                 'image': image_file,
                 'product_line': self.product_line
@@ -222,3 +237,25 @@ class ProductImageApiTests(TestCase):
 
         self.assertEqual(len(images), 1)
         self.assertTrue(os.path.exists(images[0].image.path))
+
+    def test_update_image_success(self):
+        """Test updating image successfully."""
+
+        img = create_image(self.user, self.product_line)
+        old_path = img.image.path
+
+        payload = {
+            'alt_text': 'new text',
+            'image': 'test_image.jpg',
+            'product_line': self.product_line
+        }
+
+        url = image_detail_url(img.id)
+        r = self.client.patch(url, payload, format='multipart')
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+        img.refresh_from_db()
+        self.assertEqual(img.alt_text, payload['alt_text'])
+        self.assertTrue(os.path.exists(img.image.path))
+        self.assertNotEqual(old_path, img.image.path)
