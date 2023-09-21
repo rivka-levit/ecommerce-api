@@ -44,7 +44,7 @@ class CreateProductImageSerializer(ProductImageSerializer):
         fields = ['id', 'alt_text', 'image', 'ordering', 'product_line_id']
 
     def create(self, validated_data):
-        print(validated_data)
+        """Create and return image object."""
         product_line_id = validated_data.pop('product_line')['id']
 
         product_line = get_object_or_404(

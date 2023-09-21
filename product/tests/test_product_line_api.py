@@ -233,15 +233,14 @@ class ProductImageApiTests(TestCase):
         """Test creating an image object and upload the image itself."""
 
         image_obj = create_image(self.user, self.product_line)
+        url = upload_image_url(image_obj.id)
 
         with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
-            img = Image.new(mode='RGB', size=(10, 10))
+            img = Image.new('RGB', (10, 10))
             img.save(image_file, format='JPEG')
-            img.seek(0)
-
+            image_file.seek(0)
             payload = {'image': image_file}
 
-            url = upload_image_url(image_obj.id)
             r = self.client.post(url, payload, format='multipart')
 
         self.product_line.refresh_from_db()

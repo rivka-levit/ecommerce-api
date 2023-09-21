@@ -3,9 +3,11 @@ Views for product APIs.
 """
 from django.db.models import Prefetch
 
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 
 from drf_spectacular.utils import (
@@ -201,3 +203,19 @@ class ProductImageViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(methods=['POST'], detail=True, url_path='upload-image')
+    def upload_image(self, request, pk=None):
+        """Upload an image to the image object."""
+
+        image_obj = self.get_object()
+        request.data['alt_text'] = image_obj.alt_text
+
+        serializer = self.get_serializer(image_obj, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
