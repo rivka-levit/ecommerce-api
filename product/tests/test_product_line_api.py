@@ -214,8 +214,8 @@ class ProductImageApiTests(TestCase):
 
     def tearDown(self) -> None:
         images = self.product_line.images.all()
-        for image in images:
-            image.delete()
+        for image_obj in images:
+            image_obj.image.delete()
 
     def test_create_image_object(self):
         """Test creating image object without the image itself."""

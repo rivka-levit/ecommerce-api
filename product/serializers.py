@@ -38,10 +38,13 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class CreateProductImageSerializer(ProductImageSerializer):
     """Serializer for creating product images."""
 
-    product_line_id = serializers.IntegerField(source='product_line.id', required=True)
+    product_line_id = serializers.IntegerField(
+        source='product_line.id',
+        required=True
+    )
 
     class Meta(ProductImageSerializer.Meta):
-        fields = ['id', 'alt_text', 'image', 'ordering', 'product_line_id']
+        fields = ['id', 'alt_text', 'ordering', 'product_line_id']
 
     def create(self, validated_data):
         """Create and return image object."""

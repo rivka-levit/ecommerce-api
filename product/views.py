@@ -168,6 +168,54 @@ class ProductLineViewSet(
         serializer.save(user=self.request.user)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'product_line_id',
+                OpenApiTypes.INT,
+                description='Filter by product_line.',
+                required=True
+            )
+        ],
+    ),
+    update=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+    partial_update=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+    destroy=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+    upload_image=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+)
 class ProductImageViewSet(
     mixins.DestroyModelMixin,
     mixins.UpdateModelMixin,
@@ -209,7 +257,10 @@ class ProductImageViewSet(
         """Upload an image to the image object."""
 
         image_obj = self.get_object()
+
+        request.data._mutable = True
         request.data['alt_text'] = image_obj.alt_text
+        request.data._mutable = False
 
         serializer = self.get_serializer(image_obj, data=request.data)
 
