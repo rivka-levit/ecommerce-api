@@ -146,7 +146,10 @@ class ProductImage(models.Model):
 
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
     alt_text = models.CharField(max_length=150)
-    image = models.ImageField(upload_to=product_image_file_path, null=True)
+    image = models.ImageField(
+        upload_to=product_image_file_path,
+        null=True,
+        blank=True)
     product_line = models.ForeignKey(
         to=ProductLine,
         on_delete=models.CASCADE,

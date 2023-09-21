@@ -35,6 +35,31 @@ class ProductImageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class CreateProductImageSerializer(ProductImageSerializer):
+    """Serializer for creating product images."""
+
+    product_line_id = serializers.IntegerField(source='product_line.id', required=True)
+
+    class Meta(ProductImageSerializer.Meta):
+        fields = ['id', 'alt_text', 'image', 'ordering', 'product_line_id']
+
+    def create(self, validated_data):
+        print(validated_data)
+        product_line_id = validated_data.pop('product_line')['id']
+
+        product_line = get_object_or_404(
+            ProductLine,
+            id=product_line_id
+        )
+
+        image = ProductImage.objects.create(
+            product_line=product_line,
+            **validated_data
+        )
+
+        return image
+
+
 class ProductLineSerializer(serializers.ModelSerializer):
     """Serializer for product lines."""
     images = ProductImageSerializer(many=True, required=False)
@@ -59,7 +84,6 @@ class CreateProductLineSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         auth_user = self.context['request'].user
-
         product_slug = validated_data.pop('product')['slug']
         product = get_object_or_404(
             Product,

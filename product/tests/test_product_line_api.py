@@ -29,6 +29,10 @@ def image_detail_url(image_id):
     return reverse('image-detail', args=[image_id])
 
 
+def upload_image_url(image_id):
+    return reverse('image-upload-image', args=[image_id])
+
+
 def create_product(user, **kwargs):
     """Create a sample product."""
 
@@ -213,21 +217,32 @@ class ProductImageApiTests(TestCase):
         for image in images:
             image.delete()
 
-    def test_create_upload_image(self):
+    def test_create_image_object(self):
+        """Test creating image object without the image itself."""
+
+        payload = {
+            'alt_text': 'some_image',
+            'product_line_id': self.product_line.id
+        }
+
+        r = self.client.post(IMAGES_URL, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+
+    def test_upload_image(self):
         """Test creating an image object and upload the image itself."""
+
+        image_obj = create_image(self.user, self.product_line)
 
         with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
             img = Image.new(mode='RGB', size=(10, 10))
             img.save(image_file, format='JPEG')
             img.seek(0)
 
-            payload = {
-                'alt_text': 'some_image',
-                'image': image_file,
-                'product_line': self.product_line
-            }
+            payload = {'image': image_file}
 
-            r = self.client.post(IMAGES_URL, payload, format='multipart')
+            url = upload_image_url(image_obj.id)
+            r = self.client.post(url, payload, format='multipart')
 
         self.product_line.refresh_from_db()
 
@@ -242,23 +257,19 @@ class ProductImageApiTests(TestCase):
         """Test updating image successfully."""
 
         img = create_image(self.user, self.product_line)
-        old_path = img.image.path
 
         payload = {
             'alt_text': 'new text',
-            'image': 'test_image.jpg',
-            'product_line': self.product_line
+            'product_line_id': self.product_line.id
         }
 
         url = image_detail_url(img.id)
-        r = self.client.patch(url, payload, format='multipart')
+        r = self.client.patch(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
 
         img.refresh_from_db()
         self.assertEqual(img.alt_text, payload['alt_text'])
-        self.assertTrue(os.path.exists(img.image.path))
-        self.assertNotEqual(old_path, img.image.path)
 
     def test_remove_image(self):
         """Test removing an image from product line."""

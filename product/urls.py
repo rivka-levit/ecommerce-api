@@ -13,7 +13,8 @@ router.register('brands', views.BrandViewSet, basename='brand')
 router.register('products', views.ProductViewSet, basename='product')
 router.register('product-lines',
                 views.ProductLineViewSet,
-                basename='product-line')
+                basename='product-line'),
+router.register('images', views.ProductImageViewSet, basename='image')
 
 urlpatterns = [
     path('', include(router.urls)),

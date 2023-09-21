@@ -15,7 +15,7 @@ from drf_spectacular.utils import (
     OpenApiTypes
 )
 
-from .models import Category, Brand, Product, ProductLine
+from .models import Category, Brand, Product, ProductLine, ProductImage
 from product import serializers
 
 
@@ -139,7 +139,7 @@ class ProductLineViewSet(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet
 ):
-    """View for updating and deleting product lines."""
+    """View for managing product lines."""
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -159,6 +159,43 @@ class ProductLineViewSet(
 
         if self.action == 'create':
             return serializers.CreateProductLineSerializer
+
+        return self.serializer_class
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class ProductImageViewSet(
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    """View for managing the images of product lines."""
+
+    serializer_class = serializers.ProductImageSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = ProductImage.objects.filter(user=self.request.user)
+        product_line_id = self.request.query_params.get(
+            'product_line_id',
+            None
+        )
+
+        if product_line_id:
+            qs = qs.filter(product_line_id=product_line_id)
+
+        return qs.order_by('ordering')
+
+    def get_serializer_class(self):
+        """Return the serializer class for a particular request."""
+
+        if self.action == 'create':
+            return serializers.CreateProductImageSerializer
 
         return self.serializer_class
 
