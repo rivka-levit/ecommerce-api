@@ -63,6 +63,20 @@ class CreateProductImageSerializer(ProductImageSerializer):
         return image
 
 
+class UpdateImageSerializer(ProductImageSerializer):
+    """Serializer for updating an image object."""
+
+    class Meta(ProductImageSerializer.Meta):
+        fields = ['id', 'alt_text', 'ordering']
+
+
+class UploadImageSerializer(ProductImageSerializer):
+    """Serializer for uploading images to image objects."""
+
+    class Meta(ProductImageSerializer.Meta):
+        fields = ['id', 'image']
+
+
 class ProductLineSerializer(serializers.ModelSerializer):
     """Serializer for product lines."""
     images = ProductImageSerializer(many=True, required=False)

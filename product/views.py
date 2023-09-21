@@ -246,6 +246,13 @@ class ProductImageViewSet(
 
         if self.action == 'create':
             return serializers.CreateProductImageSerializer
+        if self.action == 'upload_image':
+            return serializers.UploadImageSerializer
+        if any((
+                self.action == 'update',
+                self.action == 'partial_update'
+        )):
+            return serializers.UpdateImageSerializer
 
         return self.serializer_class
 
