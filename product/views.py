@@ -259,6 +259,20 @@ class ProductImageViewSet(
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete image object and remove the image file uploaded to
+        the database.
+        """
+
+        image_obj = self.get_object()
+
+        if image_obj.image:
+            image_obj.image.delete()
+        self.perform_destroy(image_obj)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(methods=['POST'], detail=True, url_path='upload-image')
     def upload_image(self, request, pk=None):
         """Upload an image to the image object."""
