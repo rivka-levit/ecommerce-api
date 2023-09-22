@@ -1,10 +1,13 @@
 """
 Views for product APIs.
 """
+from django.db.models import Prefetch
 
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 
 from drf_spectacular.utils import (
@@ -14,7 +17,7 @@ from drf_spectacular.utils import (
     OpenApiTypes
 )
 
-from .models import Category, Brand, Product, ProductLine
+from .models import Category, Brand, Product, ProductLine, ProductImage
 from product import serializers
 
 
@@ -64,7 +67,11 @@ class BrandViewSet(BaseStoreViewSet):
 )
 class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
-    queryset = Product.objects.all().select_related('category', 'brand')
+    queryset = Product.objects.all().select_related(
+        'category', 'brand'
+    ).prefetch_related(
+        Prefetch('product_lines__images')
+    )
     serializer_class = serializers.ProductSerializer
     lookup_field = 'slug'
 
@@ -134,7 +141,7 @@ class ProductLineViewSet(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet
 ):
-    """View for updating and deleting product lines."""
+    """View for managing product lines."""
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -159,3 +166,128 @@ class ProductLineViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'product_line_id',
+                OpenApiTypes.INT,
+                description='Filter by product_line.',
+                required=True
+            )
+        ],
+    ),
+    update=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+    partial_update=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+    destroy=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+    upload_image=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
+)
+class ProductImageViewSet(
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    """View for managing the images of product lines."""
+
+    serializer_class = serializers.ProductImageSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = ProductImage.objects.filter(user=self.request.user)
+        product_line_id = self.request.query_params.get(
+            'product_line_id',
+            None
+        )
+
+        if product_line_id:
+            qs = qs.filter(product_line_id=product_line_id)
+
+        return qs.order_by('ordering')
+
+    def get_serializer_class(self):
+        """Return the serializer class for a particular request."""
+
+        if self.action == 'create':
+            return serializers.CreateProductImageSerializer
+        if self.action == 'upload_image':
+            return serializers.UploadImageSerializer
+        if any((
+                self.action == 'update',
+                self.action == 'partial_update'
+        )):
+            return serializers.UpdateImageSerializer
+
+        return self.serializer_class
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Delete image object and remove the image file uploaded to
+        the database.
+        """
+
+        image_obj = self.get_object()
+
+        if image_obj.image:
+            image_obj.image.delete()
+        self.perform_destroy(image_obj)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['POST'], detail=True, url_path='upload-image')
+    def upload_image(self, request, pk=None):
+        """Upload an image to the image object."""
+
+        image_obj = self.get_object()
+
+        request.data._mutable = True
+        request.data['alt_text'] = image_obj.alt_text
+        request.data._mutable = False
+
+        serializer = self.get_serializer(image_obj, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -253,3 +253,4 @@ fabric.properties
 /.idea/codeStyles/codeStyleConfig.xml
 /.idea/dataSources.xml
 /schema.yml
+/uploads/

@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from drf_spectacular.utils import extend_schema_field
 
-from .models import Category, Brand, Product, ProductLine
+from .models import Category, Brand, Product, ProductLine, ProductImage
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -26,12 +26,65 @@ class BrandSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    """Serializer for product images."""
+
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'alt_text', 'image', 'ordering']
+        read_only_fields = ['id']
+
+
+class CreateProductImageSerializer(ProductImageSerializer):
+    """Serializer for creating product images."""
+
+    product_line_id = serializers.IntegerField(
+        source='product_line.id',
+        required=True
+    )
+
+    class Meta(ProductImageSerializer.Meta):
+        fields = ['id', 'alt_text', 'ordering', 'product_line_id']
+
+    def create(self, validated_data):
+        """Create and return image object."""
+        product_line_id = validated_data.pop('product_line')['id']
+
+        product_line = get_object_or_404(
+            ProductLine,
+            id=product_line_id
+        )
+
+        image = ProductImage.objects.create(
+            product_line=product_line,
+            **validated_data
+        )
+
+        return image
+
+
+class UpdateImageSerializer(ProductImageSerializer):
+    """Serializer for updating an image object."""
+
+    class Meta(ProductImageSerializer.Meta):
+        fields = ['id', 'alt_text', 'ordering']
+
+
+class UploadImageSerializer(ProductImageSerializer):
+    """Serializer for uploading images to image objects."""
+
+    class Meta(ProductImageSerializer.Meta):
+        fields = ['id', 'image']
+
+
 class ProductLineSerializer(serializers.ModelSerializer):
     """Serializer for product lines."""
+    images = ProductImageSerializer(many=True, required=False)
 
     class Meta:
         model = ProductLine
-        fields = ['id', 'sku', 'ordering', 'price', 'stock_qty', 'is_active']
+        fields = ['id', 'sku', 'ordering', 'price', 'stock_qty', 'is_active',
+                  'images']
         read_only_fields = ['id']
 
 
@@ -48,7 +101,6 @@ class CreateProductLineSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         auth_user = self.context['request'].user
-
         product_slug = validated_data.pop('product')['slug']
         product = get_object_or_404(
             Product,

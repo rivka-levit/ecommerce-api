@@ -10,6 +10,17 @@ from product.fields import OrderField
 
 from datetime import datetime
 
+import os
+import uuid
+
+
+def product_image_file_path(instance, filename):
+    """Generate file path for a new recipe image."""
+    ext = os.path.splitext(filename)[1]
+    filename = f'{uuid.uuid4()}{ext}'
+
+    return os.path.join('uploads', 'products', filename)
+
 
 class Category(MPTTModel):
     """Category object."""
@@ -128,3 +139,45 @@ class ProductLine(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         return super(ProductLine, self).save(*args, **kwargs)
+
+
+class ProductImage(models.Model):
+    """Image objects for product lines."""
+
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    alt_text = models.CharField(max_length=150)
+    image = models.ImageField(
+        upload_to=product_image_file_path,
+        null=True,
+        blank=True)
+    product_line = models.ForeignKey(
+        to=ProductLine,
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
+    ordering = OrderField(to_field='product_line', blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'product image'
+        verbose_name_plural = 'product images'
+
+    def __str__(self):
+        return f'Product image: {self.alt_text}'
+
+    def clean(self):
+        """Check if the ordering number is unique for related product line."""
+
+        qs = ProductImage.objects.filter(
+            product_line=self.product_line
+        ).exclude(pk=self.pk)
+
+        for obj in qs:
+            if self.ordering == obj.ordering:
+                raise ValidationError(
+                    'The ordering number of a product image must be unique '
+                    'for this particular product line.'
+                )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super(ProductImage, self).save(*args, **kwargs)

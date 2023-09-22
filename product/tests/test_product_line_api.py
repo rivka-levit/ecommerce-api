@@ -1,6 +1,9 @@
 """
 Tests for product lines APIs.
 """
+import tempfile
+import os
+
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -9,19 +12,25 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from product.models import Product, ProductLine
-from product.serializers import ProductLineSerializer, CreateProductLineSerializer
+from PIL import Image
+
+from product.models import Product, ProductLine, ProductImage
+from product.serializers import CreateProductLineSerializer
 
 PRODUCT_LINES_URL = reverse('product-line-list')
+IMAGES_URL = reverse('image-list')
 
 
-def detail_url(item_id):
+def pl_detail_url(item_id):
     return reverse('product-line-detail', args=[item_id])
 
 
-def create_url(product_slug):
-    """Return the url for creating a product line for a particular product."""
-    return reverse('product-line-create', args=[product_slug])
+def image_detail_url(image_id):
+    return reverse('image-detail', args=[image_id])
+
+
+def upload_image_url(image_id):
+    return reverse('image-upload-image', args=[image_id])
 
 
 def create_product(user, **kwargs):
@@ -52,13 +61,29 @@ def create_product_line(user, product, sku, **kwargs):
     )
 
 
+def create_image(user, product_line, **kwargs):
+    """Create and return a sample image object."""
+
+    defaults = {
+        'alt_text': 'some alternative text',
+        'image': 'test_imag.jpg',
+    }
+    defaults.update(**kwargs)
+
+    return ProductImage.objects.create(
+        user=user,
+        product_line=product_line,
+        **defaults
+    )
+
+
 class ProductLineApiTests(TestCase):
     """Tests for product lines APIs."""
 
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = get_user_model().objects.create_user(
-            email='test_pr_liens_user@example.com',
+            email='test_pr_lines_user@example.com',
             password='test_pass123'
         )
         self.client.force_authenticate(self.user)
@@ -95,7 +120,7 @@ class ProductLineApiTests(TestCase):
             'sku': 'aquamarine'
         }
 
-        url = detail_url(product_line.id)
+        url = pl_detail_url(product_line.id)
         r = self.client.patch(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -107,7 +132,7 @@ class ProductLineApiTests(TestCase):
 
         product_line = create_product_line(self.user, self.product, 'bamboo')
 
-        url = detail_url(product_line.id)
+        url = pl_detail_url(product_line.id)
 
         r = self.client.delete(url)
 
@@ -169,3 +194,95 @@ class ProductLineApiTests(TestCase):
 
         with self.assertRaises(ValidationError):
             self.client.post(PRODUCT_LINES_URL, payload)
+
+
+class ProductImageApiTests(TestCase):
+    """Tests for product image APIs."""
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='test_image_user@example.com',
+            password='test_pass123'
+        )
+        self.client.force_authenticate(self.user)
+        self.product = create_product(self.user)
+        self.product_line = create_product_line(
+            self.user,
+            self.product,
+            'kappa-poo')
+
+    def tearDown(self) -> None:
+        images = self.product_line.images.all()
+        for image_obj in images:
+            image_obj.image.delete()
+
+    def test_create_image_object(self):
+        """Test creating image object without the image itself."""
+
+        payload = {
+            'alt_text': 'some_image',
+            'product_line_id': self.product_line.id
+        }
+
+        r = self.client.post(IMAGES_URL, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+
+    def test_upload_image(self):
+        """Test creating an image object and upload the image itself."""
+
+        image_obj = create_image(self.user, self.product_line)
+        url = upload_image_url(image_obj.id)
+
+        with tempfile.NamedTemporaryFile(suffix='.jpg') as image_file:
+            img = Image.new('RGB', (10, 10))
+            img.save(image_file, format='JPEG')
+            image_file.seek(0)
+            payload = {'image': image_file}
+
+            r = self.client.post(url, payload, format='multipart')
+
+        self.product_line.refresh_from_db()
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+        images = self.product_line.images.all()
+
+        self.assertEqual(len(images), 1)
+        self.assertTrue(os.path.exists(images[0].image.path))
+
+    def test_update_image_success(self):
+        """Test updating image successfully."""
+
+        img = create_image(self.user, self.product_line)
+
+        payload = {
+            'alt_text': 'new text',
+            'product_line_id': self.product_line.id
+        }
+
+        url = image_detail_url(img.id)
+        r = self.client.patch(url, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+
+        img.refresh_from_db()
+        self.assertEqual(img.alt_text, payload['alt_text'])
+
+    def test_remove_image(self):
+        """Test removing an image from product line."""
+
+        img = create_image(self.user, self.product_line)
+
+        url = image_detail_url(img.id)
+        r = self.client.delete(url)
+
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+
+        self.product_line.refresh_from_db()
+        images = self.product_line.images.filter(
+            user=self.user,
+            product_line=self.product_line
+        )
+        self.assertFalse(images.exists())
