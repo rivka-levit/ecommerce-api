@@ -141,7 +141,7 @@ class ProductLineVariation(models.Model):
     )
 
     class Meta:
-        unique_together = ('user', 'variation', 'product_line')
+        unique_together = ('variation', 'product_line')
 
 
 class ProductLine(models.Model):
