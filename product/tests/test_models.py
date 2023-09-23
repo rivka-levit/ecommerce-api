@@ -35,6 +35,17 @@ def create_product_line(**params) -> models.ProductLine:
     return models.ProductLine.objects.create(**defaults)
 
 
+def create_attribute(user, **params):
+    """Create and return a sample attribute."""
+    defaults = {
+        'name': 'color',
+        'description': 'Sample description.'
+    }
+    defaults.update(**params)
+
+    return models.Attribute.objects.create(user=user, **defaults)
+
+
 class ModelTests(TestCase):
     """Tests for models."""
 
@@ -251,11 +262,26 @@ class AttributesModelsTests(TestCase):
         """Test creating an attribute"""
 
         payload = {
-            'name': 'color',
+            'name': 'size',
             "description": 'Sample description',
         }
 
-        attribute = models.Attribute.objects.create(user=self.user, **payload)
+        attribute = create_attribute(user=self.user, **payload)
 
         for k, v in payload.items():
             self.assertEqual(getattr(attribute, k), payload[k])
+
+    def test_create_variations(self):
+        """Test creating variations of an attribute"""
+
+        payload = {'name': 'red'}
+
+        attribute = create_attribute(self.user)
+        variation = models.Variation.objects.create(
+            user=self.user,
+            attribute=attribute,
+            **payload
+        )
+
+        self.assertIsInstance(variation, models.Variation)
+        self.assertEqual(variation.name, payload['name'])

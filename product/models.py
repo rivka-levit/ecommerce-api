@@ -110,6 +110,16 @@ class Attribute(models.Model):
         return self.name
 
 
+class Variation(models.Model):
+    """Variation of an attribute."""
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    attribute = models.ForeignKey(to=Attribute, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
 class ProductLine(models.Model):
     """Product line object."""
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
