@@ -310,3 +310,47 @@ class AttributesModelsTests(TestCase):
         self.assertIsInstance(pl_variation, models.ProductLineVariation)
         self.assertEqual(pl_variation.variation, variation)
         self.assertEqual(pl_variation.product_line, self.product_line)
+
+    def test_product_line_contains_its_variations(self):
+        """
+        Test product line retrieves just the variations of this
+        product line.
+        """
+
+        attribute = create_attribute(self.user)
+        pl_2 = create_product_line(
+            user=self.user,
+            product=self.product,
+            sku='another product line'
+        )
+
+        v1 = models.Variation.objects.create(
+            user=self.user,
+            attribute=attribute,
+            name='red'
+        )
+        v2 = models.Variation.objects.create(
+            user=self.user,
+            attribute=attribute,
+            name='blue'
+        )
+
+        models.ProductLineVariation.objects.create(
+            user=self.user,
+            variation=v1,
+            product_line=self.product_line
+        )
+
+        models.ProductLineVariation.objects.create(
+            user=self.user,
+            variation=v2,
+            product_line=pl_2
+        )
+
+        self.product_line.refresh_from_db()
+        pl_2.refresh_from_db()
+
+        self.assertIn(v1, self.product_line.variations.all())
+        self.assertIn(v2, pl_2.variations.all())
+        self.assertNotIn(v1, pl_2.variations.all())
+        self.assertNotIn(v2, self.product_line.variations.all())

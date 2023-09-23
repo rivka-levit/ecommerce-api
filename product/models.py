@@ -133,17 +133,15 @@ class ProductLineVariation(models.Model):
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
     variation = models.ForeignKey(
         to=Variation,
-        on_delete=models.CASCADE,
-        related_name='product_line_variations'
+        on_delete=models.CASCADE
     )
     product_line = models.ForeignKey(
         'ProductLine',
-        on_delete=models.CASCADE,
-        related_name='product_line_variations'
+        on_delete=models.CASCADE
     )
 
     class Meta:
-        unique_together = ('variation', 'product_line')
+        unique_together = ('user', 'variation', 'product_line')
 
 
 class ProductLine(models.Model):
