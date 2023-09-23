@@ -102,7 +102,11 @@ class Product(models.Model):
 
 class Attribute(models.Model):
     """Attribute object."""
-    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name='attributes'
+    )
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
 
@@ -114,10 +118,28 @@ class Variation(models.Model):
     """Variation of an attribute."""
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
-    attribute = models.ForeignKey(to=Attribute, on_delete=models.CASCADE)
+    attribute = models.ForeignKey(
+        to=Attribute,
+        on_delete=models.CASCADE,
+        related_name='variations'
+    )
 
     def __str__(self):
         return self.name
+
+
+class ProductLineVariation(models.Model):
+    """Intermediate model for attribute variations of a product line."""
+    variation = models.ForeignKey(
+        to=Variation,
+        on_delete=models.CASCADE,
+        related_name='product_line_variations'
+    )
+    product_line = models.ForeignKey(
+        'ProductLine',
+        on_delete=models.CASCADE,
+        related_name='product_line_variations'
+    )
 
 
 class ProductLine(models.Model):
@@ -132,6 +154,9 @@ class ProductLine(models.Model):
         on_delete=models.CASCADE,
         related_name='product_lines'
     )
+    variations = models.ManyToManyField(
+        to=Variation,
+        through=ProductLineVariation)
     is_active = models.BooleanField(default=True)
 
     class Meta:
