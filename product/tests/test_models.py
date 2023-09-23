@@ -234,3 +234,28 @@ class ProductLineModelTests(TestCase):
         qs = self.product.product_lines.all()
         self.assertEqual(len(qs), 1)
         self.assertEqual(qs[0].sku, 'first')
+
+
+class AttributesModelsTests(TestCase):
+    """Tests for the models of Attribute, Variation, ProductLineVariation."""
+
+    def setUp(self) -> None:
+        self.user = create_user(email='attr_test@example.com')
+        self.product = create_product(user=self.user)
+        self.product_line = create_product_line(
+            user=self.user,
+            product=self.product
+        )
+
+    def test_create_attribute_success(self):
+        """Test creating an attribute"""
+
+        payload = {
+            'name': 'color',
+            "description": 'Sample description',
+        }
+
+        attribute = models.Attribute.objects.create(user=self.user, **payload)
+
+        for k, v in payload.items():
+            self.assertEqual(getattr(attribute, k), payload[k])

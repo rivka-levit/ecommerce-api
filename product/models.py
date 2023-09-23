@@ -100,6 +100,16 @@ class Product(models.Model):
         return self.name
 
 
+class Attribute(models.Model):
+    """Attribute object."""
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
 class ProductLine(models.Model):
     """Product line object."""
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
