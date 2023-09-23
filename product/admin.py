@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
-from .models import Category, Brand, Product, ProductLine, ProductImage
+from .models import (Category, Brand, Product, ProductLine, ProductImage,
+                     Attribute, Variation)
 
 
 @admin.register(Category)
@@ -17,6 +18,21 @@ class BrandAdmin(admin.ModelAdmin):
     list_display = ['name', 'is_active']
     readonly_fields = ['id']
     list_editable = ['is_active']
+
+
+@admin.register(Attribute)
+class AttributeAdmin(admin.ModelAdmin):
+    list_display = ['name']
+
+
+@admin.register(Variation)
+class VariationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'attribute']
+
+
+class VariationInLine(admin.TabularInline):
+    model = Variation.product_lines.through
+    extra = 0
 
 
 class EditLinkInLine(object):
@@ -38,7 +54,8 @@ class EditLinkInLine(object):
 
 class ProductLineInline(EditLinkInLine, admin.TabularInline):
     model = ProductLine
-    fields = ['user', 'sku', 'price', 'stock_qty', 'ordering', 'edit', 'is_active']
+    fields = ['user', 'sku', 'price', 'stock_qty', 'ordering',
+              'edit', 'is_active']
     extra = 0
     readonly_fields = ['edit']
 
@@ -60,4 +77,4 @@ class ProductImageInLine(admin.TabularInline):
 class ProductLineAdmin(admin.ModelAdmin):
     list_display = ['user', 'sku', 'price', 'stock_qty', 'ordering',
                     'is_active']
-    inlines = [ProductImageInLine]
+    inlines = [ProductImageInLine, VariationInLine]

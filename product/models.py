@@ -160,7 +160,8 @@ class ProductLine(models.Model):
     )
     variations = models.ManyToManyField(
         to=Variation,
-        through=ProductLineVariation
+        through=ProductLineVariation,
+        related_name='product_lines'
     )
     is_active = models.BooleanField(default=True)
 
