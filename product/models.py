@@ -125,7 +125,7 @@ class Variation(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return f'{self.attribute.name}-{self.name}'
 
 
 class ProductLineVariation(models.Model):
@@ -141,6 +141,9 @@ class ProductLineVariation(models.Model):
         on_delete=models.CASCADE,
         related_name='product_line_variations'
     )
+
+    class Meta:
+        unique_together = ('variation', 'product_line')
 
 
 class ProductLine(models.Model):
