@@ -285,3 +285,28 @@ class AttributesModelsTests(TestCase):
 
         self.assertIsInstance(variation, models.Variation)
         self.assertEqual(variation.name, payload['name'])
+
+    def test_create_product_line_variation(self):
+        """
+        Test creating a variation of an attribute that belongs to a
+        particular product line.
+        """
+        attribute = create_attribute(self.user)
+
+        payload = {
+            'user': self.user,
+            'attribute': attribute,
+            'name': 'red'
+        }
+
+        variation = models.Variation.objects.create(**payload)
+
+        pl_variation = models.ProductLineVariation(
+            user=self.user,
+            variation=variation,
+            product_line=self.product_line
+        )
+
+        self.assertIsInstance(pl_variation, models.ProductLineVariation)
+        self.assertEqual(pl_variation.variation, variation)
+        self.assertEqual(pl_variation.product_line, self.product_line)

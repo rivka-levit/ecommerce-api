@@ -130,6 +130,7 @@ class Variation(models.Model):
 
 class ProductLineVariation(models.Model):
     """Intermediate model for attribute variations of a product line."""
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
     variation = models.ForeignKey(
         to=Variation,
         on_delete=models.CASCADE,
@@ -156,7 +157,8 @@ class ProductLine(models.Model):
     )
     variations = models.ManyToManyField(
         to=Variation,
-        through=ProductLineVariation)
+        through=ProductLineVariation
+    )
     is_active = models.BooleanField(default=True)
 
     class Meta:
