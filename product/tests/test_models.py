@@ -58,8 +58,8 @@ class ModelTests(TestCase):
             user=self.user
         )
 
-        self.assertEqual(category.name, 'Shoes')
-        self.assertEqual(str(category), 'Shoes')
+        self.assertEqual(category.name, 'shoes')
+        self.assertEqual(str(category), 'shoes')
 
     def test_create_category_with_parent(self):
         category = models.Category.objects.create(
@@ -126,8 +126,8 @@ class ModelTests(TestCase):
     def test_create_brand(self):
         brand = models.Brand.objects.create(name='Nike', user=self.user)
 
-        self.assertEqual(brand.name, 'Nike')
-        self.assertEqual(str(brand), 'Nike')
+        self.assertEqual(brand.name, 'nike')
+        self.assertEqual(str(brand), 'nike')
 
     def test_create_product(self):
         brand = models.Brand.objects.create(name='Nike', user=self.user)

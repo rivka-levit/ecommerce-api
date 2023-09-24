@@ -68,7 +68,7 @@ class PrivateCategoryApiTests(TestCase):
         category = Category.objects.get(id=r.data['id'])
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(category.name, payload['name'])
+        self.assertEqual(category.name, payload['name'].lower())
 
     def test_get_single_category(self):
         cat = create_category(self.user)
@@ -88,7 +88,7 @@ class PrivateCategoryApiTests(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         cat.refresh_from_db()
-        self.assertEqual(cat.name, payload['name'])
+        self.assertEqual(cat.name, payload['name'].lower())
 
     def test_delete_category(self):
         cat = create_category(self.user)

@@ -48,6 +48,10 @@ class Category(MPTTModel):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Category, self).save(*args, **kwargs)
+
 
 class Brand(models.Model):
     """Brand object."""
@@ -60,6 +64,10 @@ class Brand(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Brand, self).save(*args, **kwargs)
 
 
 class Product(models.Model):
@@ -117,6 +125,10 @@ class Attribute(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Attribute, self).save(*args, **kwargs)
 
 
 class Variation(models.Model):

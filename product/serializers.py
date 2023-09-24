@@ -158,6 +158,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def _get_or_create_and_assign_brand(self, brand, product):
         auth_user = self.context['request'].user
         if brand is not None:
+            brand['name'] = brand['name'].lower()
             brand_obj, created = Brand.objects.get_or_create(
                 user=auth_user,
                 **brand
@@ -168,6 +169,7 @@ class ProductSerializer(serializers.ModelSerializer):
     def _get_or_create_and_assign_category(self, category, product):
         auth_user = self.context['request'].user
         if category is not None:
+            category['name'] = category['name'].lower()
             category_obj, created = Category.objects.get_or_create(
                 user=auth_user,
                 **category

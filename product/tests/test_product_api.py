@@ -92,7 +92,7 @@ class TestProductApi(TestCase):
         products = Product.objects.all()
         self.assertEqual(products.count(), 1)
         product = products[0]
-        self.assertEqual(product.brand.name, payload['brand']['name'])
+        self.assertEqual(product.brand.name, payload['brand']['name'].lower())
 
     def test_create_product_with_category(self):
         """Test creating a product with category."""
@@ -115,7 +115,10 @@ class TestProductApi(TestCase):
         products = Product.objects.all()
         self.assertEqual(products.count(), 1)
         product = products[0]
-        self.assertEqual(product.category.name, payload['category']['name'])
+        self.assertEqual(
+            product.category.name,
+            payload['category']['name'].lower()
+        )
         self.assertEqual(product.category.parent, parent_category)
 
     def test_update_product(self):
@@ -130,8 +133,11 @@ class TestProductApi(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         product.refresh_from_db()
-        self.assertEqual(product.brand.name, payload['brand']['name'])
-        self.assertEqual(product.category.name, payload['category']['name'])
+        self.assertEqual(product.brand.name, payload['brand']['name'].lower())
+        self.assertEqual(
+            product.category.name,
+            payload['category']['name'].lower()
+        )
 
     def test_delete_product(self):
         """Test removing a product."""
