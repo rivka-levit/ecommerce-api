@@ -109,6 +109,11 @@ class Attribute(models.Model):
     )
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
+    categories = models.ManyToManyField(
+        to=Category,
+        blank=True,
+        related_name='attributes'
+    )
 
     def __str__(self):
         return self.name

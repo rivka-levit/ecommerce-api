@@ -271,6 +271,33 @@ class AttributesModelsTests(TestCase):
         for k, v in payload.items():
             self.assertEqual(getattr(attribute, k), payload[k])
 
+    def test_create_attribute_assigned_to_category(self):
+        """Test creating an attribute and assigning it to a category."""
+
+        category = models.Category.objects.create(user=self.user, name='Bags')
+        attribute = create_attribute(self.user, name='Color')
+
+        attribute.categories.add(category)
+        category.refresh_from_db()
+
+        self.assertIn(category, attribute.categories.all())
+
+    def test_filter_attributes_by_category(self):
+        """Test filtering attributes by category."""
+
+        category = models.Category.objects.create(user=self.user, name='Bags')
+
+        attr_1 = create_attribute(self.user, name='Color')
+        attr_2 = create_attribute(self.user, name='Resolution')
+
+        attr_1.categories.add(category)
+        attr_1.refresh_from_db()
+
+        attributes = models.Attribute.objects.filter(categories__in=(category,))
+
+        self.assertIn(attr_1, attributes)
+        self.assertNotIn(attr_2, attributes)
+
     def test_create_variations(self):
         """Test creating variations of an attribute"""
 
