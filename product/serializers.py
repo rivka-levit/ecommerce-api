@@ -155,27 +155,25 @@ class ProductSerializer(serializers.ModelSerializer):
                   'is_digital', 'is_active', 'created_at', 'product_lines']
         read_only_fields = ['slug']
 
-    def _get_or_create_and_assign_brand(self, brand, product):
+    def _get_or_create_parameter(self, param_data, model):
         auth_user = self.context['request'].user
-        if brand is not None:
-            brand['name'] = brand['name'].lower()
-            brand_obj, created = Brand.objects.get_or_create(
+        if param_data is not None:
+            param_data['name'] = param_data['name'].lower()
+            param_obj, created = model.objects.get_or_create(
                 user=auth_user,
-                **brand
+                **param_data
             )
-            product.brand = brand_obj
-            product.save()
+            return param_obj
 
-    def _get_or_create_and_assign_category(self, category, product):
-        auth_user = self.context['request'].user
-        if category is not None:
-            category['name'] = category['name'].lower()
-            category_obj, created = Category.objects.get_or_create(
-                user=auth_user,
-                **category
-            )
-            product.category = category_obj
-            product.save()
+    def _get_or_create_and_assign_brand(self, brand, model, product):
+        brand_obj = self._get_or_create_parameter(brand, model)
+        product.brand = brand_obj
+        product.save()
+
+    def _get_or_create_and_assign_category(self, category, model, product):
+        category_obj = self._get_or_create_parameter(category, model)
+        product.category = category_obj
+        product.save()
 
     @extend_schema_field(ProductLineSerializer(many=True))
     def get_related_product_lines(self, product):
@@ -192,8 +190,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
         product = Product.objects.create(**validated_data)
 
-        self._get_or_create_and_assign_brand(brand, product)
-        self._get_or_create_and_assign_category(category, product)
+        self._get_or_create_and_assign_brand(brand, Brand, product)
+        self._get_or_create_and_assign_category(category, Category, product)
 
         return product
 
@@ -202,8 +200,8 @@ class ProductSerializer(serializers.ModelSerializer):
         brand = validated_data.pop('brand', None)
         category = validated_data.pop('category', None)
 
-        self._get_or_create_and_assign_brand(brand, instance)
-        self._get_or_create_and_assign_category(category, instance)
+        self._get_or_create_and_assign_brand(brand, Brand, instance)
+        self._get_or_create_and_assign_category(category, Category, instance)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
