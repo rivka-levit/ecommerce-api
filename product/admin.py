@@ -23,6 +23,7 @@ class BrandAdmin(admin.ModelAdmin):
 @admin.register(Attribute)
 class AttributeAdmin(admin.ModelAdmin):
     list_display = ['name']
+    list_filter = ['categories']
 
 
 @admin.register(Variation)
