@@ -7,7 +7,8 @@ from rest_framework import serializers
 
 from drf_spectacular.utils import extend_schema_field
 
-from .models import Category, Brand, Product, ProductLine, ProductImage
+from .models import (Category, Brand, Product, ProductLine, ProductImage,
+                     Attribute, Variation)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -77,14 +78,37 @@ class UploadImageSerializer(ProductImageSerializer):
         fields = ['id', 'image']
 
 
+class AttributeSerializer(serializers.ModelSerializer):
+    """Serializer for an attribute."""
+
+    class Meta:
+        model = Attribute
+        fields = ['id', 'name', 'description']
+
+
+class VariationSerializer(serializers.ModelSerializer):
+    """Serializer for a variation."""
+
+    attribute_name = serializers.CharField(
+        source='attribute.name',
+        required=True
+    )
+
+    class Meta:
+        model = Variation
+        fields = ['id', 'attribute_name', 'name']
+
+
 class ProductLineSerializer(serializers.ModelSerializer):
     """Serializer for product lines."""
+
     images = ProductImageSerializer(many=True, required=False)
+    variations = VariationSerializer(many=True, required=False)
 
     class Meta:
         model = ProductLine
         fields = ['id', 'sku', 'ordering', 'price', 'stock_qty', 'is_active',
-                  'images']
+                  'images', 'variations']
         read_only_fields = ['id']
 
 
