@@ -89,14 +89,14 @@ class AttributeSerializer(serializers.ModelSerializer):
 class VariationSerializer(serializers.ModelSerializer):
     """Serializer for a variation."""
 
-    attribute_name = serializers.CharField(
+    attribute = serializers.CharField(
         source='attribute.name',
         required=True
     )
 
     class Meta:
         model = Variation
-        fields = ['id', 'attribute_name', 'name']
+        fields = ['id', 'attribute', 'name']
 
 
 class ProductLineSerializer(serializers.ModelSerializer):
