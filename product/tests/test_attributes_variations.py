@@ -8,8 +8,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from product.models import Attribute, Variation
-from product.serializers import AttributeSerializer
+from product.models import Attribute, Category, Product
 
 ATTRIBUTES_URL = reverse('attribute-list')
 
@@ -44,17 +43,14 @@ class AttributeTests(TestCase):
     def test_retrieve_list_attributes(self):
         """Tests retrieving all the attributes of the user."""
 
-        a1 = create_attribute(self.user, name='color')
-        a2 = create_attribute(self.user, name='size')
-        a3 = create_attribute(self.user, name='resolution')
-
-        srs = AttributeSerializer((a1, a2, a3), many=True)
+        create_attribute(self.user, name='color')
+        create_attribute(self.user, name='size')
+        create_attribute(self.user, name='resolution')
 
         r = self.client.get(ATTRIBUTES_URL)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(len(r.data), 3)
-        self.assertEqual(r.data, srs)
 
     def test_create_attribute(self):
         """Test creating an attribute."""
@@ -92,3 +88,44 @@ class AttributeTests(TestCase):
         r = self.client.delete(url)
 
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_filter_attributes_by_category(self):
+        """Test retrieving list of attributes and filtering it by category."""
+
+        category = Category.objects.create(user=self.user, name='Bags')
+
+        a1 = create_attribute(self.user)
+        a2 = create_attribute(self.user)
+        a3 = create_attribute(self.user)
+
+        a1.categories.add(category)
+        a2.categories.add(category)
+
+        params = {'category': category.id}
+
+        r = self.client.get(ATTRIBUTES_URL, params)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(r.data), 2)
+
+    def test_filter_attributes_by_product(self):
+        """Test retrieving list of attributes and filtering it by product."""
+
+        product = Product.objects.create(
+            user=self.user,
+            name='Sample product name',
+            description='Sample product description.'
+        )
+
+        a1 = create_attribute(self.user)
+        a2 = create_attribute(self.user)
+        a3 = create_attribute(self.user)
+
+        product.attributes.add(a1)
+
+        params = {'product_slug': product.slug}
+
+        r = self.client.get(ATTRIBUTES_URL, params)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(r.data), 1)

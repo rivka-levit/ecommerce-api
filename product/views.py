@@ -17,7 +17,8 @@ from drf_spectacular.utils import (
     OpenApiTypes
 )
 
-from .models import Category, Brand, Product, ProductLine, ProductImage
+from .models import (Category, Brand, Product, ProductLine, ProductImage,
+                     Attribute)
 from product import serializers
 
 
@@ -291,3 +292,40 @@ class ProductImageViewSet(
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AttributeViewSet(BaseStoreViewSet):
+    """View set for managing attributes."""
+
+    queryset = Attribute.objects.all()
+    serializer_class = serializers.AttributeDetailSerializer
+
+    def get_queryset(self):
+        """Filter queryset by category or product."""
+        qs = super().get_queryset()
+        category_id = self.request.query_params.get('category', None)
+        product_slug = self.request.query_params.get('product_slug', None)
+
+        if category_id:
+            try:
+                category = Category.objects.get(id=category_id)
+                qs = qs.filter(categories__in=[category])
+            except Category.DoesNotExist:
+                pass
+
+        if product_slug:
+            try:
+                product = Product.objects.get(slug=product_slug)
+                qs = qs.filter(products__in=[product])
+            except Product.DoesNotExist:
+                pass
+
+        return qs
+
+    def get_serializer_class(self):
+        """Return a serializer class for different requests."""
+
+        if self.action == 'list':
+            return serializers.AttributeSerializer
+
+        return self.serializer_class
