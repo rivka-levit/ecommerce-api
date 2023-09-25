@@ -294,6 +294,24 @@ class ProductImageViewSet(
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'category',
+                OpenApiTypes.INT,
+                description='Category id',
+                required=False
+            ),
+            OpenApiParameter(
+                'product_slug',
+                OpenApiTypes.STR,
+                description='Product slug',
+                required=False
+            )
+        ]
+    )
+)
 class AttributeViewSet(BaseStoreViewSet):
     """View set for managing attributes."""
 
