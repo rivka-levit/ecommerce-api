@@ -83,16 +83,24 @@ class AttributeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attribute
+        fields = ['id', 'name']
+
+
+class AttributeDetailSerializer(AttributeSerializer):
+
+    class Meta(AttributeSerializer.Meta):
         fields = ['id', 'name', 'description']
 
 
 class VariationSerializer(serializers.ModelSerializer):
     """Serializer for a variation."""
 
-    attribute = serializers.CharField(
-        source='attribute.name',
-        required=True
-    )
+    # attribute = serializers.CharField(
+    #     source='attribute.name',
+    #     required=True
+    # )
+
+    attribute = AttributeSerializer()
 
     class Meta:
         model = Variation
