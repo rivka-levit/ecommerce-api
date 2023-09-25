@@ -94,6 +94,11 @@ class Product(models.Model):
         on_delete=models.SET_NULL,
         related_name='products'
     )
+    attributes = models.ManyToManyField(
+        'Attribute',
+        blank=True,
+        related_name='products'
+    )
     is_digital = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

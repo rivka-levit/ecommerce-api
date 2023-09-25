@@ -155,6 +155,24 @@ class ModelTests(TestCase):
 
         self.assertTrue(product.slug)
 
+    def test_product_attributes_assigned_success(self):
+        """Test assigning attributes to a product."""
+
+        a1 = create_attribute(self.user)
+        a2 = create_attribute(self.user, name='size')
+        a3 = create_attribute(self.user, name='resolution')
+
+        product = create_product(user=self.user)
+        product.attributes.add(a1)
+        product.attributes.add(a2)
+
+        product.refresh_from_db()
+        product_attributes = product.attributes.all()
+
+        self.assertIn(a1, product_attributes)
+        self.assertIn(a2, product_attributes)
+        self.assertNotIn(a3, product_attributes)
+
     def test_create_product_line_success(self):
         """Test creating a product line for a product successful."""
 
