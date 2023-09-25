@@ -87,18 +87,51 @@ class AttributeSerializer(serializers.ModelSerializer):
 
 
 class AttributeDetailSerializer(AttributeSerializer):
+    categories = CategorySerializer(many=True, required=False)
 
     class Meta(AttributeSerializer.Meta):
-        fields = ['id', 'name', 'description']
+        fields = ['id', 'name', 'description', 'categories']
+
+    def create(self, validated_data):
+        categories = validated_data.pop('categories', [])
+
+        attribute = Attribute.objects.create(**validated_data)
+
+        if categories:
+            for category in categories:
+                cat = self._get_or_create_parameter(category, Category)
+                attribute.categories.add(cat)
+
+        return attribute
+
+    def update(self, instance, validated_data):
+        categories = validated_data.pop('categories', [])
+
+        if categories:
+            for category in categories:
+                cat = self._get_or_create_parameter(category, Category)
+                if cat not in instance.categories.all():
+                    instance.categories.add(cat)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
+
+    def _get_or_create_parameter(self, param_data, model):
+        auth_user = self.context['request'].user
+        if param_data is not None:
+            param_data['name'] = param_data['name'].lower()
+            param_obj, created = model.objects.get_or_create(
+                user=auth_user,
+                **param_data
+            )
+            return param_obj
 
 
 class VariationSerializer(serializers.ModelSerializer):
     """Serializer for a variation."""
-
-    # attribute = serializers.CharField(
-    #     source='attribute.name',
-    #     required=True
-    # )
 
     attribute = AttributeSerializer()
 
