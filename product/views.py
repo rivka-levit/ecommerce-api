@@ -356,7 +356,7 @@ class AttributeViewSet(BaseStoreViewSet):
 
     @action(methods=['POST'], detail=True, url_path='variation-create')
     def variation_create(self, request, pk=None):
-        """Create and return a variation of a particular attribute."""
+        """Create and return variation of a particular attribute."""
 
         attribute = self.get_object()
 
@@ -372,7 +372,7 @@ class AttributeViewSet(BaseStoreViewSet):
     @action(
         methods=['PATCH'],
         detail=True,
-        url_path=r'attribute-variation-update/(?P<variation_id>\d+)'
+        url_path=r'variation-update/(?P<variation_id>\d+)'
     )
     def variation_update(self, request, pk=None, variation_id=None):
         """Update variation of a particular attribute."""
@@ -392,10 +392,10 @@ class AttributeViewSet(BaseStoreViewSet):
     @action(
         methods=['DELETE'],
         detail=True,
-        url_path=r'attribute-variation-delete/(?P<variation_id>\d+)'
+        url_path=r'variation-delete/(?P<variation_id>\d+)'
     )
     def variation_delete(self, request, pk=None, variation_id=None):
-        """Remove a variation of a particular attribute from database."""
+        """Remove variation of a particular attribute from database."""
 
         variation = Variation.objects.get(id=variation_id, attribute_id=pk)
         variation.delete()
