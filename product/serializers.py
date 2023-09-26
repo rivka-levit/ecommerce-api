@@ -13,17 +13,20 @@ from .models import (Category, Brand, Product, ProductLine, ProductImage,
 
 def get_or_create_parameter(user, param_data, model):
     """Get or create an object of model."""
+
     if param_data is not None:
         param_data['name'] = param_data['name'].lower()
         param_obj, created = model.objects.get_or_create(
             user=user,
             **param_data
         )
+
         return param_obj
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for categories."""
+
     class Meta:
         model = Category
         fields = ['id', 'name', 'parent']
@@ -32,6 +35,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 class BrandSerializer(serializers.ModelSerializer):
     """Serializer for brands."""
+
     class Meta:
         model = Brand
         fields = ['id', 'name']
@@ -98,6 +102,7 @@ class AttributeSerializer(serializers.ModelSerializer):
 
 
 class AttributeDetailSerializer(AttributeSerializer):
+    """Serializer for an attribute for detail endpoints."""
 
     categories = CategorySerializer(many=True, required=False)
 
@@ -121,6 +126,7 @@ class AttributeDetailSerializer(AttributeSerializer):
 
     def update(self, instance, validated_data):
         """Update an attribute object."""
+
         auth_user = self.context['request'].user
         categories = validated_data.pop('categories', [])
 
@@ -190,6 +196,7 @@ class CreateProductLineSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for products."""
+
     brand = BrandSerializer(required=False)
     category = CategorySerializer(required=False)
     product_lines = serializers.SerializerMethodField(
@@ -204,14 +211,20 @@ class ProductSerializer(serializers.ModelSerializer):
         read_only_fields = ['slug']
 
     def _get_or_create_and_assign_brand(self, brand, model, product):
+        """Get brand if exists or create it, and assign to the product."""
+
         auth_user = self.context['request'].user
         brand_obj = get_or_create_parameter(auth_user, brand, model)
+
         product.brand = brand_obj
         product.save()
 
     def _get_or_create_and_assign_category(self, category, model, product):
+        """Get category if exists or create it, and assign to the product."""
+
         auth_user = self.context['request'].user
         category_obj = get_or_create_parameter(auth_user, category, model)
+
         product.category = category_obj
         product.save()
 
