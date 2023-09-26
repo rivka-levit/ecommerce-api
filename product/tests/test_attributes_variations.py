@@ -8,7 +8,7 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from product.models import Attribute, Category, Product
+from product.models import Attribute, Variation, Category, Product
 
 ATTRIBUTES_URL = reverse('attribute-list')
 
@@ -19,6 +19,33 @@ def get_attr_detail_url(attr_id):
     return reverse('attribute-detail', args=[attr_id])
 
 
+def get_create_variation_url(attr_id):
+    """
+    Create and return the url for creating a variation of a particular
+    attribute.
+    """
+
+    return reverse('attribute-variation-create', args=[attr_id])
+
+
+def get_update_variation_url(variation_id):
+    """
+    Create and return the url for updating a variation of a particular
+    attribute.
+    """
+
+    return reverse('attribute-variation-update', args=[variation_id])
+
+
+def get_delete_variation_url(variation_id):
+    """
+    Create and return the url for deleting a variation of a particular
+    attribute.
+    """
+
+    return reverse('attribute-variation-delete', args=[variation_id])
+
+
 def create_attribute(user, **params):
     defaults = {
         'name': 'sample attribute',
@@ -27,6 +54,15 @@ def create_attribute(user, **params):
     defaults.update(**params)
 
     return Attribute.objects.create(user=user, **defaults)
+
+
+def create_variation(user, attr, **params):
+    defaults = {
+        'name': 'sample variation'
+    }
+    defaults.update(**params)
+
+    return Variation.objects.create(user=user, attribute=attr, **defaults)
 
 
 class AttributeTests(TestCase):
@@ -179,3 +215,52 @@ class AttributeTests(TestCase):
         self.assertEqual(len(r.data['categories']), 1)
         cat1 = r.data['categories'][0]
         self.assertEqual(cat1['name'], category.name)
+
+
+class VariationApisTests(TestCase):
+    """Tests for variation APIs."""
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='test_var_user@example.com',
+            password='test_pass123'
+        )
+        self.client.force_authenticate(self.user)
+        self.attribute = create_attribute(self.user, name='color')
+
+    def test_create_variation_success(self):
+        """Test creating variation of a particular attribute."""
+
+        payload = {'name': 'red'}
+
+        url = get_create_variation_url(self.attribute.id)
+
+        r = self.client.post(url, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(r.data['name'], payload['name'])
+
+    def test_update_variation_success(self):
+        """Test updating variation."""
+
+        variation = create_variation(self.user, self.attribute)
+        payload = {'name': 'blue'}
+
+        url = get_update_variation_url(variation.id)
+
+        r = self.client.patch(url, payload)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(r.data['name'], payload['name'])
+
+    def test_delete_variation_success(self):
+        """Test removing variation."""
+
+        variation = create_variation(self.user, self.attribute)
+
+        url = get_delete_variation_url(variation.id)
+
+        r = self.client.delete(url)
+
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
