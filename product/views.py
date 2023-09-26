@@ -18,7 +18,7 @@ from drf_spectacular.utils import (
 )
 
 from .models import (Category, Brand, Product, ProductLine, ProductImage,
-                     Attribute)
+                     Attribute, Variation)
 from product import serializers
 
 
@@ -345,5 +345,26 @@ class AttributeViewSet(BaseStoreViewSet):
 
         if self.action == 'list':
             return serializers.AttributeSerializer
+        elif self.action in (
+                'variation_create',
+                'variation_update',
+                'variation_delete'
+        ):
+            return serializers.CreateUpdateDeleteVariationSerializer
 
         return self.serializer_class
+
+    @action(methods=['POST'], detail=True, url_path='variation-create')
+    def variation_create(self, request, pk=None):
+        """Create and return a variation of a particular attribute."""
+
+        attribute = self.get_object()
+
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(user=request.user, attribute=attribute)
+
+            return Response(serializer.data, status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

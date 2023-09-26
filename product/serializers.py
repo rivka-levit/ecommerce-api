@@ -153,6 +153,16 @@ class VariationSerializer(serializers.ModelSerializer):
         fields = ['id', 'attribute', 'name']
 
 
+class CreateUpdateDeleteVariationSerializer(VariationSerializer):
+    """
+    Serializer to create, update and delete variation through
+    attribute view set.
+    """
+
+    class Meta(VariationSerializer.Meta):
+        fields = ['id', 'name']
+
+
 class ProductLineSerializer(serializers.ModelSerializer):
     """Serializer for product lines."""
 
