@@ -28,22 +28,28 @@ def get_create_variation_url(attr_id):
     return reverse('attribute-variation-create', args=[attr_id])
 
 
-def get_update_variation_url(variation_id):
+def get_update_variation_url(attr_id, variation_id):
     """
     Create and return the url for updating a variation of a particular
     attribute.
     """
 
-    return reverse('attribute-variation-update', args=[variation_id])
+    return reverse(
+        'attribute-variation-update',
+        args=[attr_id, variation_id]
+    )
 
 
-def get_delete_variation_url(variation_id):
+def get_delete_variation_url(attr_id, variation_id):
     """
     Create and return the url for deleting a variation of a particular
     attribute.
     """
 
-    return reverse('attribute-variation-delete', args=[variation_id])
+    return reverse(
+        'attribute-variation-delete',
+        args=[attr_id, variation_id]
+    )
 
 
 def create_attribute(user, **params):
@@ -247,7 +253,7 @@ class VariationApisTests(TestCase):
         variation = create_variation(self.user, self.attribute)
         payload = {'name': 'blue'}
 
-        url = get_update_variation_url(variation.id)
+        url = get_update_variation_url(self.attribute.id, variation.id)
 
         r = self.client.patch(url, payload)
 
@@ -259,7 +265,7 @@ class VariationApisTests(TestCase):
 
         variation = create_variation(self.user, self.attribute)
 
-        url = get_delete_variation_url(variation.id)
+        url = get_delete_variation_url(self.attribute.id, variation.id)
 
         r = self.client.delete(url)
 

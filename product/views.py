@@ -368,3 +368,23 @@ class AttributeViewSet(BaseStoreViewSet):
             return Response(serializer.data, status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(
+        methods=['PATCH'],
+        detail=True,
+        url_path=r'attribute-variation-update/(?P<variation_id>\d+)'
+    )
+    def variation_update(self, request, pk=None, variation_id=None):
+        """Update variation of a particular attribute."""
+
+        attribute = self.get_object()
+        variation = Variation.objects.get(id=variation_id)
+
+        serializer = self.get_serializer(variation, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(user=request.user, attribute=attribute)
+
+            return Response(serializer.data, status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
