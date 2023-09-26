@@ -378,7 +378,7 @@ class AttributeViewSet(BaseStoreViewSet):
         """Update variation of a particular attribute."""
 
         attribute = self.get_object()
-        variation = Variation.objects.get(id=variation_id)
+        variation = Variation.objects.get(id=variation_id, attribute_id=pk)
 
         serializer = self.get_serializer(variation, data=request.data)
 
@@ -388,3 +388,16 @@ class AttributeViewSet(BaseStoreViewSet):
             return Response(serializer.data, status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(
+        methods=['DELETE'],
+        detail=True,
+        url_path=r'attribute-variation-delete/(?P<variation_id>\d+)'
+    )
+    def variation_delete(self, request, pk=None, variation_id=None):
+        """Remove a variation of a particular attribute from database."""
+
+        variation = Variation.objects.get(id=variation_id, attribute_id=pk)
+        variation.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
