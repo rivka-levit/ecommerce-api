@@ -11,6 +11,17 @@ from .models import (Category, Brand, Product, ProductLine, ProductImage,
                      Attribute, Variation)
 
 
+def get_or_create_parameter(user, param_data, model):
+    """Get or create an object of model."""
+    if param_data is not None:
+        param_data['name'] = param_data['name'].lower()
+        param_obj, created = model.objects.get_or_create(
+            user=user,
+            **param_data
+        )
+        return param_obj
+
+
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for categories."""
     class Meta:
@@ -87,29 +98,35 @@ class AttributeSerializer(serializers.ModelSerializer):
 
 
 class AttributeDetailSerializer(AttributeSerializer):
+
     categories = CategorySerializer(many=True, required=False)
 
     class Meta(AttributeSerializer.Meta):
         fields = ['id', 'name', 'description', 'categories']
 
     def create(self, validated_data):
+        """Create an attribute object."""
+
+        auth_user = self.context['request'].user
         categories = validated_data.pop('categories', [])
 
         attribute = Attribute.objects.create(**validated_data)
 
         if categories:
             for category in categories:
-                cat = self._get_or_create_parameter(category, Category)
+                cat = get_or_create_parameter(auth_user, category, Category)
                 attribute.categories.add(cat)
 
         return attribute
 
     def update(self, instance, validated_data):
+        """Update an attribute object."""
+        auth_user = self.context['request'].user
         categories = validated_data.pop('categories', [])
 
         if categories:
             for category in categories:
-                cat = self._get_or_create_parameter(category, Category)
+                cat = get_or_create_parameter(auth_user, category, Category)
                 if cat not in instance.categories.all():
                     instance.categories.add(cat)
 
@@ -118,16 +135,6 @@ class AttributeDetailSerializer(AttributeSerializer):
 
         instance.save()
         return instance
-
-    def _get_or_create_parameter(self, param_data, model):
-        auth_user = self.context['request'].user
-        if param_data is not None:
-            param_data['name'] = param_data['name'].lower()
-            param_obj, created = model.objects.get_or_create(
-                user=auth_user,
-                **param_data
-            )
-            return param_obj
 
 
 class VariationSerializer(serializers.ModelSerializer):
@@ -196,23 +203,15 @@ class ProductSerializer(serializers.ModelSerializer):
                   'is_digital', 'is_active', 'created_at', 'product_lines']
         read_only_fields = ['slug']
 
-    def _get_or_create_parameter(self, param_data, model):
-        auth_user = self.context['request'].user
-        if param_data is not None:
-            param_data['name'] = param_data['name'].lower()
-            param_obj, created = model.objects.get_or_create(
-                user=auth_user,
-                **param_data
-            )
-            return param_obj
-
     def _get_or_create_and_assign_brand(self, brand, model, product):
-        brand_obj = self._get_or_create_parameter(brand, model)
+        auth_user = self.context['request'].user
+        brand_obj = get_or_create_parameter(auth_user, brand, model)
         product.brand = brand_obj
         product.save()
 
     def _get_or_create_and_assign_category(self, category, model, product):
-        category_obj = self._get_or_create_parameter(category, model)
+        auth_user = self.context['request'].user
+        category_obj = get_or_create_parameter(auth_user, category, model)
         product.category = category_obj
         product.save()
 
@@ -226,6 +225,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create a product."""
+
         brand = validated_data.pop('brand', None)
         category = validated_data.pop('category', None)
 
@@ -238,6 +238,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update a product."""
+
         brand = validated_data.pop('brand', None)
         category = validated_data.pop('category', None)
 
