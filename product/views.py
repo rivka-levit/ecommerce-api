@@ -134,6 +134,28 @@ class ProductViewSet(BaseStoreViewSet):
                 required=True)
         ]
     ),
+    attach_variation=extend_schema(
+            request=None,
+            responses={204: None},
+            parameters=[
+                OpenApiParameter(
+                    'id',
+                    OpenApiTypes.INT,
+                    OpenApiParameter.PATH,
+                    required=True)
+            ]
+        ),
+    detach_variation=extend_schema(
+        request=None,
+        responses={204: None},
+        parameters=[
+            OpenApiParameter(
+                'id',
+                OpenApiTypes.INT,
+                OpenApiParameter.PATH,
+                required=True)
+        ]
+    ),
 )
 class ProductLineViewSet(
     mixins.DestroyModelMixin,
@@ -152,7 +174,9 @@ class ProductLineViewSet(
         queryset = ProductLine.objects.filter(user=self.request.user)
         slug = self.request.query_params.get('product_slug', None)
 
-        if slug:
+        if self.action in ('attach_variation', 'detach_variation'):
+            queryset = None
+        elif slug:
             queryset = queryset.filter(product__slug=slug)
 
         return queryset.order_by('ordering')
