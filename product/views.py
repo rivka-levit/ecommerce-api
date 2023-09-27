@@ -18,7 +18,7 @@ from drf_spectacular.utils import (
 )
 
 from .models import (Category, Brand, Product, ProductLine, ProductImage,
-                     Attribute, Variation)
+                     Attribute, Variation, ProductLineVariation)
 from product import serializers
 
 
@@ -167,6 +167,47 @@ class ProductLineViewSet(
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(
+        methods=['POST'],
+        detail=True,
+        url_path=r'attach-variation/(?P<variation_id>\d+)'
+    )
+    def attach_variation(self, request, pk=None, variation_id=None):
+        """Assign variation to a product line."""
+
+        product_line = self.get_object()
+        variation = Variation.objects.get(id=variation_id)
+
+        if variation not in product_line.variations.all():
+            ProductLineVariation.objects.create(
+                user=request.user,
+                product_line=product_line,
+                variation=variation
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        methods=['POST'],
+        detail=True,
+        url_path=r'detach-variation/(?P<variation_id>\d+)'
+    )
+    def detach_variation(self, request, pk=None, variation_id=None):
+        """Detach variation from a product line."""
+
+        try:
+            pl_v = ProductLineVariation.objects.get(
+                product_line_id=pk,
+                variation_id=variation_id
+            )
+            pl_v.delete()
+
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        except ProductLineVariation.DoesNotExist:
+
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 @extend_schema_view(

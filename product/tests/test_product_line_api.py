@@ -260,6 +260,21 @@ class ProductLineVariationsApiTests(TestCase):
         self.product_line.refresh_from_db()
         self.assertNotIn(self.variation, self.product_line.variations.all())
 
+    def test_detach_not_assigned_variation_fails(self):
+        """
+        Test detaching variation that has not been assigned to the product
+        line, returns 404 not found error.
+        """
+
+        url = reverse(
+            'product-line-detach-variation',
+            args=[self.product_line.id, self.variation.id]
+        )
+
+        r = self.client.post(url)
+
+        self.assertEqual(r.status_code, status.HTTP_404_NOT_FOUND)
+
 
 class ProductImageApiTests(TestCase):
     """Tests for product image APIs."""
