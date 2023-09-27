@@ -101,13 +101,31 @@ class AttributeSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
+class VariationSerializer(serializers.ModelSerializer):
+    """Serializer for a variation."""
+
+    attribute = AttributeSerializer()
+
+    class Meta:
+        model = Variation
+        fields = ['id', 'attribute', 'name']
+
+
+class VariationShortSerializer(VariationSerializer):
+    """Short serializer for variation."""
+
+    class Meta(VariationSerializer.Meta):
+        fields = ['id', 'name']
+
+
 class AttributeDetailSerializer(AttributeSerializer):
     """Serializer for an attribute for detail endpoints."""
 
+    variations = VariationShortSerializer(many=True, required=False)
     categories = CategorySerializer(many=True, required=False)
 
     class Meta(AttributeSerializer.Meta):
-        fields = ['id', 'name', 'description', 'categories']
+        fields = ['id', 'name', 'variations', 'description', 'categories']
 
     def create(self, validated_data):
         """Create an attribute object."""
@@ -141,16 +159,6 @@ class AttributeDetailSerializer(AttributeSerializer):
 
         instance.save()
         return instance
-
-
-class VariationSerializer(serializers.ModelSerializer):
-    """Serializer for a variation."""
-
-    attribute = AttributeSerializer()
-
-    class Meta:
-        model = Variation
-        fields = ['id', 'attribute', 'name']
 
 
 class CreateUpdateDeleteVariationSerializer(VariationSerializer):

@@ -174,9 +174,7 @@ class ProductLineViewSet(
         queryset = ProductLine.objects.filter(user=self.request.user)
         slug = self.request.query_params.get('product_slug', None)
 
-        if self.action in ('attach_variation', 'detach_variation'):
-            queryset = None
-        elif slug:
+        if slug:
             queryset = queryset.filter(product__slug=slug)
 
         return queryset.order_by('ordering')
