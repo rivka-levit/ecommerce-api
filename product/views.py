@@ -168,7 +168,7 @@ class ProductLineViewSet(
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = serializers.ProductLineSerializer
+    serializer_class = serializers.CreateProductLineSerializer
 
     def get_queryset(self):
         queryset = ProductLine.objects.filter(user=self.request.user)
@@ -182,8 +182,8 @@ class ProductLineViewSet(
     def get_serializer_class(self):
         """Return the serializer class for a particular request."""
 
-        if self.action == 'create':
-            return serializers.CreateProductLineSerializer
+        if self.action == 'list':
+            return serializers.ProductLineSerializer
 
         return self.serializer_class
 
@@ -359,6 +359,8 @@ class ProductImageViewSet(
 
 @extend_schema_view(
     list=extend_schema(
+        description='List of all the attributes. '
+                    'Can be filtered by category or product.',
         parameters=[
             OpenApiParameter(
                 'category',
@@ -406,8 +408,8 @@ class AttributeViewSet(BaseStoreViewSet):
     def get_serializer_class(self):
         """Return a serializer class for different requests."""
 
-        if self.action == 'list':
-            return serializers.AttributeSerializer
+        if self.action == 'partial_update':
+            return serializers.AttributePatchSerializer
         elif self.action in (
                 'variation_create',
                 'variation_update',

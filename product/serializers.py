@@ -99,6 +99,14 @@ class AttributeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attribute
         fields = ['id', 'name']
+        read_only_fields = ['id']
+
+
+class AttributePatchSerializer(AttributeSerializer):
+    """Serializer for list endpoint."""
+
+    class Meta(AttributeSerializer.Meta):
+        fields = ['id', 'name', 'description']
 
 
 class VariationSerializer(serializers.ModelSerializer):
@@ -108,7 +116,8 @@ class VariationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Variation
-        fields = ['id', 'attribute', 'name']
+        fields = ['id', 'name', 'attribute']
+        read_only_fields = ['id', 'attribute']
 
 
 class VariationShortSerializer(VariationSerializer):
@@ -122,23 +131,26 @@ class AttributeDetailSerializer(AttributeSerializer):
     """Serializer for an attribute for detail endpoints."""
 
     variations = VariationShortSerializer(many=True, required=False)
-    categories = CategorySerializer(many=True, required=False)
+    # categories = CategorySerializer(many=True, required=False)
 
     class Meta(AttributeSerializer.Meta):
-        fields = ['id', 'name', 'variations', 'description', 'categories']
+        fields = ['id', 'name', 'description', 'variations']
 
     def create(self, validated_data):
         """Create an attribute object."""
 
         auth_user = self.context['request'].user
-        categories = validated_data.pop('categories', [])
+        variations = validated_data.pop('variations', [])
 
         attribute = Attribute.objects.create(**validated_data)
 
-        if categories:
-            for category in categories:
-                cat = get_or_create_parameter(auth_user, category, Category)
-                attribute.categories.add(cat)
+        if variations:
+            for v in variations:
+                Variation.objects.create(
+                    user=auth_user,
+                    attribute=attribute,
+                    name=v['name']
+                )
 
         return attribute
 
