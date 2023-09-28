@@ -158,16 +158,21 @@ class AttributeDetailSerializer(AttributeSerializer):
         """Update an attribute object."""
 
         auth_user = self.context['request'].user
-        categories = validated_data.pop('categories', [])
-
-        if categories:
-            for category in categories:
-                cat = get_or_create_parameter(auth_user, category, Category)
-                if cat not in instance.categories.all():
-                    instance.categories.add(cat)
+        variations = validated_data.pop('variations', [])
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
+        if variations:
+            for variation in instance.variations.all():
+                variation.delete()
+
+            for variation in variations:
+                Variation.objects.create(
+                    user=auth_user,
+                    attribute=instance,
+                    name=variation['name']
+                )
 
         instance.save()
         return instance

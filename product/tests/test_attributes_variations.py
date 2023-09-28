@@ -132,7 +132,37 @@ class AttributeTests(TestCase):
         variations = r.data['variations']
         self.assertEqual(len(variations), len(payload['variations']))
 
-    def test_update_attribute(self):
+    def test_full_update_attribute_variations(self):
+        """
+        Test updating all the data in attribute, include completely new
+        list of variation.
+        """
+
+        attribute = create_attribute(self.user)
+        variation = create_variation(self.user, attribute)
+
+        payload = {
+            'name': 'size',
+            'description': 'Men shoe size.',
+            'variations': [
+                {
+                    'name': '41'
+                },
+                {
+                    'name': '42'
+                },
+            ]
+        }
+        url = get_attr_detail_url(attribute.id)
+
+        r = self.client.put(url, payload, format='json')
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        attribute.refresh_from_db()
+        self.assertEqual(attribute.variations.count(), 2)
+        self.assertNotIn(variation, attribute.variations.all())
+
+    def test_partial_update_attribute(self):
         """Test updating an attribute."""
 
         attribute = create_attribute(self.user)
