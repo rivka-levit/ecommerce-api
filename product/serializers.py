@@ -24,13 +24,49 @@ def get_or_create_parameter(user, param_data, model):
         return param_obj
 
 
+class AttributeSerializer(serializers.ModelSerializer):
+    """Serializer for an attribute."""
+
+    class Meta:
+        model = Attribute
+        fields = ['id', 'name']
+        read_only_fields = ['id']
+
+
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for categories."""
 
+    attributes = AttributeSerializer(many=True, required=False)
+
     class Meta:
         model = Category
-        fields = ['id', 'name', 'parent']
+        fields = ['id', 'name', 'parent', 'attributes']
         read_only_fields = ['id']
+
+    def create(self, validated_data):
+        """Create a category with attributes."""
+
+        attributes = validated_data.pop('attributes', [])
+
+        category = Category.objects.create(**validated_data)
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                category
+            )
+
+        return category
+
+    def _get_or_create_and_assign_attribute(self, attribute, model, category):
+        """Get attribute if exists or create it, and assign to the category."""
+
+        auth_user = self.context['request'].user
+        attr_obj = get_or_create_parameter(auth_user, attribute, model)
+
+        category.attributes.add(attr_obj)
+        category.save()
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -91,15 +127,6 @@ class UploadImageSerializer(ProductImageSerializer):
 
     class Meta(ProductImageSerializer.Meta):
         fields = ['id', 'image']
-
-
-class AttributeSerializer(serializers.ModelSerializer):
-    """Serializer for an attribute."""
-
-    class Meta:
-        model = Attribute
-        fields = ['id', 'name']
-        read_only_fields = ['id']
 
 
 class AttributePatchSerializer(AttributeSerializer):

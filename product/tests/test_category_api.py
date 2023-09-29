@@ -70,6 +70,29 @@ class PrivateCategoryApiTests(TestCase):
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         self.assertEqual(category.name, payload['name'].lower())
 
+    def test_create_category_with_attributes(self):
+        """Test creating category with attributes proper to it."""
+
+        payload = {
+            'name': 'Bags',
+            'attributes': [
+                {'name': 'color'},
+                {'name': 'material'}
+            ]
+        }
+
+        r = self.client.post(CATEGORIES_URL, payload, format='json')
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+
+        category = Category.objects.get(id=r.data['id'])
+        attributes = category.attributes.all()
+
+        self.assertEqual(len(attributes), len(payload['attributes']))
+        for attribute in payload['attributes']:
+            exists = attributes.filter(name=attribute['name'].lower()).exists()
+            self.assertTrue(exists)
+
     def test_get_single_category(self):
         cat = create_category(self.user)
         url = detail_url(cat.id)
