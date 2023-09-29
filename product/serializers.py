@@ -234,6 +234,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     brand = BrandSerializer(required=False)
     category = CategorySerializer(required=False)
+    attributes = AttributeSerializer(many=True, required=False)
     product_lines = serializers.SerializerMethodField(
         'get_related_product_lines',
         required=False
@@ -242,7 +243,8 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['name', 'description', 'slug', 'brand', 'category',
-                  'is_digital', 'is_active', 'created_at', 'product_lines']
+                  'is_digital', 'is_active', 'created_at', 'attributes',
+                  'product_lines']
         read_only_fields = ['slug']
 
     def _get_or_create_and_assign_brand(self, brand, model, product):
@@ -263,6 +265,15 @@ class ProductSerializer(serializers.ModelSerializer):
         product.category = category_obj
         product.save()
 
+    def _get_or_create_and_assign_attribute(self, attribute, model, product):
+        """Get attribute if exists or create it, and assign to the product."""
+
+        auth_user = self.context['request'].user
+        attr_obj = get_or_create_parameter(auth_user, attribute, model)
+
+        product.attributes.add(attr_obj)
+        product.save()
+
     @extend_schema_field(ProductLineSerializer(many=True))
     def get_related_product_lines(self, product):
         """Get the product lines of particular product"""
@@ -276,11 +287,19 @@ class ProductSerializer(serializers.ModelSerializer):
 
         brand = validated_data.pop('brand', None)
         category = validated_data.pop('category', None)
+        attributes = validated_data.pop('attributes', [])
 
         product = Product.objects.create(**validated_data)
 
         self._get_or_create_and_assign_brand(brand, Brand, product)
         self._get_or_create_and_assign_category(category, Category, product)
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                product
+            )
 
         return product
 
@@ -289,12 +308,23 @@ class ProductSerializer(serializers.ModelSerializer):
 
         brand = validated_data.pop('brand', None)
         category = validated_data.pop('category', None)
+        attributes = validated_data.pop('attributes', [])
 
         self._get_or_create_and_assign_brand(brand, Brand, instance)
         self._get_or_create_and_assign_category(category, Category, instance)
+
+        instance.attributes.clear()
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                instance
+            )
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
+
         return instance
