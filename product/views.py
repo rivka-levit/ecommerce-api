@@ -38,13 +38,15 @@ class BaseStoreViewSet(viewsets.ModelViewSet):
 
 class CategoryViewSet(BaseStoreViewSet):
     """View for managing category APIs."""
-    queryset = Category.objects.all().prefetch_related(Prefetch('attributes'))
+    queryset = Category.objects.filter(
+        is_active=True
+    ).prefetch_related(Prefetch('attributes'))
     serializer_class = serializers.CategorySerializer
 
 
 class BrandViewSet(BaseStoreViewSet):
     """View for managing brand APIs."""
-    queryset = Brand.objects.all()
+    queryset = Brand.objects.filter(is_active=True)
     serializer_class = serializers.BrandSerializer
 
 
@@ -68,7 +70,7 @@ class BrandViewSet(BaseStoreViewSet):
 )
 class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
-    queryset = Product.objects.all().select_related(
+    queryset = Product.objects.filter(is_active=True).select_related(
         'category', 'brand'
     ).prefetch_related(
         Prefetch('attributes')
