@@ -7,19 +7,92 @@ from rest_framework import serializers
 
 from drf_spectacular.utils import extend_schema_field
 
-from .models import Category, Brand, Product, ProductLine, ProductImage
+from .models import (Category, Brand, Product, ProductLine, ProductImage,
+                     Attribute, Variation)
+
+
+def get_or_create_parameter(user, param_data, model):
+    """Get or create an object of model."""
+
+    if param_data is not None:
+        param_data['name'] = param_data['name'].lower()
+        param_obj, created = model.objects.get_or_create(
+            user=user,
+            **param_data
+        )
+
+        return param_obj
+
+
+class AttributeSerializer(serializers.ModelSerializer):
+    """Serializer for an attribute."""
+
+    class Meta:
+        model = Attribute
+        fields = ['id', 'name']
+        read_only_fields = ['id']
 
 
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for categories."""
+
+    attributes = AttributeSerializer(many=True, required=False)
+
     class Meta:
         model = Category
-        fields = ['id', 'name', 'parent']
+        fields = ['id', 'name', 'parent', 'attributes']
         read_only_fields = ['id']
+
+    def create(self, validated_data):
+        """Create category with attributes."""
+
+        attributes = validated_data.pop('attributes', [])
+
+        category = Category.objects.create(**validated_data)
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                category
+            )
+
+        return category
+
+    def update(self, instance, validated_data):
+        """Update category with attributes."""
+
+        attributes = validated_data.pop('attributes', [])
+
+        instance.attributes.clear()
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                instance
+            )
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        return instance
+
+    def _get_or_create_and_assign_attribute(self, attribute, model, category):
+        """Get attribute if exists or create it, and assign to the category."""
+
+        auth_user = self.context['request'].user
+        attr_obj = get_or_create_parameter(auth_user, attribute, model)
+
+        category.attributes.add(attr_obj)
+        category.save()
 
 
 class BrandSerializer(serializers.ModelSerializer):
     """Serializer for brands."""
+
     class Meta:
         model = Brand
         fields = ['id', 'name']
@@ -77,14 +150,102 @@ class UploadImageSerializer(ProductImageSerializer):
         fields = ['id', 'image']
 
 
+class AttributePatchSerializer(AttributeSerializer):
+    """Serializer for list endpoint."""
+
+    class Meta(AttributeSerializer.Meta):
+        fields = ['id', 'name', 'description']
+
+
+class VariationSerializer(serializers.ModelSerializer):
+    """Serializer for a variation."""
+
+    attribute = AttributeSerializer()
+
+    class Meta:
+        model = Variation
+        fields = ['id', 'name', 'attribute']
+        read_only_fields = ['id', 'attribute']
+
+
+class VariationShortSerializer(VariationSerializer):
+    """Short serializer for variation."""
+
+    class Meta(VariationSerializer.Meta):
+        fields = ['id', 'name']
+
+
+class AttributeDetailSerializer(AttributeSerializer):
+    """Serializer for an attribute for detail endpoints."""
+
+    variations = VariationShortSerializer(many=True, required=False)
+    # categories = CategorySerializer(many=True, required=False)
+
+    class Meta(AttributeSerializer.Meta):
+        fields = ['id', 'name', 'description', 'variations']
+
+    def create(self, validated_data):
+        """Create an attribute object."""
+
+        auth_user = self.context['request'].user
+        variations = validated_data.pop('variations', [])
+
+        attribute = Attribute.objects.create(**validated_data)
+
+        if variations:
+            for v in variations:
+                Variation.objects.create(
+                    user=auth_user,
+                    attribute=attribute,
+                    name=v['name']
+                )
+
+        return attribute
+
+    def update(self, instance, validated_data):
+        """Update an attribute object."""
+
+        auth_user = self.context['request'].user
+        variations = validated_data.pop('variations', [])
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if variations:
+            for variation in instance.variations.all():
+                variation.delete()
+
+            for variation in variations:
+                Variation.objects.create(
+                    user=auth_user,
+                    attribute=instance,
+                    name=variation['name']
+                )
+
+        instance.save()
+        return instance
+
+
+class CreateUpdateDeleteVariationSerializer(VariationSerializer):
+    """
+    Serializer to create, update and delete variation through
+    attribute view set.
+    """
+
+    class Meta(VariationSerializer.Meta):
+        fields = ['id', 'name']
+
+
 class ProductLineSerializer(serializers.ModelSerializer):
     """Serializer for product lines."""
+
     images = ProductImageSerializer(many=True, required=False)
+    variations = VariationSerializer(many=True, required=False)
 
     class Meta:
         model = ProductLine
         fields = ['id', 'sku', 'ordering', 'price', 'stock_qty', 'is_active',
-                  'images']
+                  'images', 'variations']
         read_only_fields = ['id']
 
 
@@ -118,8 +279,10 @@ class CreateProductLineSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for products."""
+
     brand = BrandSerializer(required=False)
     category = CategorySerializer(required=False)
+    attributes = AttributeSerializer(many=True, required=False)
     product_lines = serializers.SerializerMethodField(
         'get_related_product_lines',
         required=False
@@ -128,28 +291,36 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['name', 'description', 'slug', 'brand', 'category',
-                  'is_digital', 'is_active', 'created_at', 'product_lines']
+                  'is_digital', 'is_active', 'created_at', 'attributes',
+                  'product_lines']
         read_only_fields = ['slug']
 
-    def _get_or_create_and_assign_brand(self, brand, product):
-        auth_user = self.context['request'].user
-        if brand is not None:
-            brand_obj, created = Brand.objects.get_or_create(
-                user=auth_user,
-                **brand
-            )
-            product.brand = brand_obj
-            product.save()
+    def _get_or_create_and_assign_brand(self, brand, model, product):
+        """Get brand if exists or create it, and assign to the product."""
 
-    def _get_or_create_and_assign_category(self, category, product):
         auth_user = self.context['request'].user
-        if category is not None:
-            category_obj, created = Category.objects.get_or_create(
-                user=auth_user,
-                **category
-            )
-            product.category = category_obj
-            product.save()
+        brand_obj = get_or_create_parameter(auth_user, brand, model)
+
+        product.brand = brand_obj
+        product.save()
+
+    def _get_or_create_and_assign_category(self, category, model, product):
+        """Get category if exists or create it, and assign to the product."""
+
+        auth_user = self.context['request'].user
+        category_obj = get_or_create_parameter(auth_user, category, model)
+
+        product.category = category_obj
+        product.save()
+
+    def _get_or_create_and_assign_attribute(self, attribute, model, product):
+        """Get attribute if exists or create it, and assign to the product."""
+
+        auth_user = self.context['request'].user
+        attr_obj = get_or_create_parameter(auth_user, attribute, model)
+
+        product.attributes.add(attr_obj)
+        product.save()
 
     @extend_schema_field(ProductLineSerializer(many=True))
     def get_related_product_lines(self, product):
@@ -161,26 +332,47 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create a product."""
+
         brand = validated_data.pop('brand', None)
         category = validated_data.pop('category', None)
+        attributes = validated_data.pop('attributes', [])
 
         product = Product.objects.create(**validated_data)
 
-        self._get_or_create_and_assign_brand(brand, product)
-        self._get_or_create_and_assign_category(category, product)
+        self._get_or_create_and_assign_brand(brand, Brand, product)
+        self._get_or_create_and_assign_category(category, Category, product)
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                product
+            )
 
         return product
 
     def update(self, instance, validated_data):
         """Update a product."""
+
         brand = validated_data.pop('brand', None)
         category = validated_data.pop('category', None)
+        attributes = validated_data.pop('attributes', [])
 
-        self._get_or_create_and_assign_brand(brand, instance)
-        self._get_or_create_and_assign_category(category, instance)
+        self._get_or_create_and_assign_brand(brand, Brand, instance)
+        self._get_or_create_and_assign_category(category, Category, instance)
+
+        instance.attributes.clear()
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                instance
+            )
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
+
         return instance

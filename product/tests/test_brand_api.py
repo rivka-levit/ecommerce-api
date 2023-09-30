@@ -58,7 +58,7 @@ class PrivateBrandTests(TestCase):
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
         brand = Brand.objects.get(id=r.data['id'])
-        self.assertEqual(brand.name, payload['name'])
+        self.assertEqual(brand.name, payload['name'].lower())
 
     def test_get_single_brand(self):
         """Test retrieving a single brand."""
@@ -80,7 +80,7 @@ class PrivateBrandTests(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         brand.refresh_from_db()
-        self.assertEqual(brand.name, payload['name'])
+        self.assertEqual(brand.name, payload['name'].lower())
 
     def test_remove_brand(self):
         """Test removing a brand."""

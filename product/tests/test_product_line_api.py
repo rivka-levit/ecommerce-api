@@ -14,7 +14,8 @@ from rest_framework.test import APIClient
 
 from PIL import Image
 
-from product.models import Product, ProductLine, ProductImage
+from product.models import (Product, ProductLine, ProductImage, Attribute,
+                            Variation, ProductLineVariation)
 from product.serializers import CreateProductLineSerializer
 
 PRODUCT_LINES_URL = reverse('product-line-list')
@@ -194,6 +195,85 @@ class ProductLineApiTests(TestCase):
 
         with self.assertRaises(ValidationError):
             self.client.post(PRODUCT_LINES_URL, payload)
+
+
+class ProductLineVariationsApiTests(TestCase):
+    """Tests for APIs that manage variations in product lines."""
+
+    def setUp(self) -> None:
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            email='test_pr_lines_user@example.com',
+            password='test_pass123'
+        )
+        self.client.force_authenticate(self.user)
+        self.product = create_product(self.user)
+        self.product_line = create_product_line(
+            self.user,
+            self.product,
+            'with chain'
+        )
+        self.attribute = Attribute.objects.create(
+            user=self.user,
+            name='color'
+        )
+        self.variation = Variation.objects.create(
+            user=self.user,
+            attribute=self.attribute,
+            name='red'
+        )
+
+    def test_attach_product_line_variation(self):
+        """Test assigning variation to a product line."""
+
+        url = reverse(
+            'product-line-attach-variation',
+            args=[self.product_line.id, self.variation.id]
+        )
+
+        r = self.client.post(url)
+
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.product_line.refresh_from_db()
+        self.assertIn(self.variation, self.product_line.variations.all())
+
+    def test_detach_product_line_variation(self):
+        """Test detaching variation from a product line."""
+
+        ProductLineVariation.objects.create(
+            user=self.user,
+            product_line=self.product_line,
+            variation=self.variation
+        )
+        self.product_line.refresh_from_db()
+
+        self.assertIn(self.variation, self.product_line.variations.all())
+
+        url = reverse(
+            'product-line-detach-variation',
+            args=[self.product_line.id, self.variation.id]
+        )
+
+        r = self.client.post(url)
+
+        self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
+        self.product_line.refresh_from_db()
+        self.assertNotIn(self.variation, self.product_line.variations.all())
+
+    def test_detach_not_assigned_variation_fails(self):
+        """
+        Test detaching variation that has not been assigned to the product
+        line, returns 404 not found error.
+        """
+
+        url = reverse(
+            'product-line-detach-variation',
+            args=[self.product_line.id, self.variation.id]
+        )
+
+        r = self.client.post(url)
+
+        self.assertEqual(r.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class ProductImageApiTests(TestCase):

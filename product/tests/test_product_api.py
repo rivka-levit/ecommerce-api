@@ -8,7 +8,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from product.models import Product, Category, Brand, ProductLine
+from product.models import Product, Category, Brand, ProductLine, Attribute
 from product.serializers import ProductSerializer
 
 PRODUCTS_URL = reverse('product-list')
@@ -92,7 +92,7 @@ class TestProductApi(TestCase):
         products = Product.objects.all()
         self.assertEqual(products.count(), 1)
         product = products[0]
-        self.assertEqual(product.brand.name, payload['brand']['name'])
+        self.assertEqual(product.brand.name, payload['brand']['name'].lower())
 
     def test_create_product_with_category(self):
         """Test creating a product with category."""
@@ -115,8 +115,40 @@ class TestProductApi(TestCase):
         products = Product.objects.all()
         self.assertEqual(products.count(), 1)
         product = products[0]
-        self.assertEqual(product.category.name, payload['category']['name'])
+        self.assertEqual(
+            product.category.name,
+            payload['category']['name'].lower()
+        )
         self.assertEqual(product.category.parent, parent_category)
+
+    def test_create_product_with_attributes(self):
+        """Test creating product with attributes proper to it."""
+
+        payload = {
+            'name': 'Fashion Bag',
+            'description': 'Great fashion bag from leather.',
+            'attributes': [
+                {
+                    'name': 'color'
+                },
+                {
+                    'name': 'material'
+                }
+            ]
+        }
+
+        r = self.client.post(PRODUCTS_URL, payload, format='json')
+
+        self.assertEqual(r.status_code, status.HTTP_201_CREATED)
+
+        product = Product.objects.filter(
+            name=payload['name'],
+            description=payload['description']
+        )
+        self.assertTrue(product.exists())
+
+        attributes = product[0].attributes.all()
+        self.assertEqual(len(attributes), 2)
 
     def test_update_product(self):
         """Test updating a product."""
@@ -130,8 +162,35 @@ class TestProductApi(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         product.refresh_from_db()
-        self.assertEqual(product.brand.name, payload['brand']['name'])
-        self.assertEqual(product.category.name, payload['category']['name'])
+        self.assertEqual(product.brand.name, payload['brand']['name'].lower())
+        self.assertEqual(
+            product.category.name,
+            payload['category']['name'].lower()
+        )
+
+    def test_update_product_attributes(self):
+        """Test updating attributes in a product."""
+
+        product = create_product(self.user)
+        attr1 = Attribute.objects.create(
+            user=self.user,
+            name='sample'
+        )
+        product.attributes.add(attr1)
+        payload = {
+            'attributes': [
+                {'name': 'color'},
+                {'name': 'size'}
+            ]
+        }
+        url = detail_url(product.slug)
+
+        r = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        product.refresh_from_db()
+        self.assertEqual(product.attributes.count(), 2)
+        self.assertNotIn(attr1, product.attributes.all())
 
     def test_delete_product(self):
         """Test removing a product."""

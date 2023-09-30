@@ -48,6 +48,10 @@ class Category(MPTTModel):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Category, self).save(*args, **kwargs)
+
 
 class Brand(models.Model):
     """Brand object."""
@@ -60,6 +64,10 @@ class Brand(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Brand, self).save(*args, **kwargs)
 
 
 class Product(models.Model):
@@ -86,6 +94,11 @@ class Product(models.Model):
         on_delete=models.SET_NULL,
         related_name='products'
     )
+    attributes = models.ManyToManyField(
+        'Attribute',
+        blank=True,
+        related_name='products'
+    )
     is_digital = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -100,6 +113,59 @@ class Product(models.Model):
         return self.name
 
 
+class Attribute(models.Model):
+    """Attribute object."""
+    user = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        related_name='attributes'
+    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(null=True, blank=True)
+    categories = models.ManyToManyField(
+        to=Category,
+        blank=True,
+        related_name='attributes'
+    )
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        self.name = self.name.lower()
+        super(Attribute, self).save(*args, **kwargs)
+
+
+class Variation(models.Model):
+    """Variation of an attribute."""
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    attribute = models.ForeignKey(
+        to=Attribute,
+        on_delete=models.CASCADE,
+        related_name='variations'
+    )
+
+    def __str__(self):
+        return f'{self.attribute.name}-{self.name}'
+
+
+class ProductLineVariation(models.Model):
+    """Intermediate model for attribute variations of a product line."""
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    variation = models.ForeignKey(
+        to=Variation,
+        on_delete=models.CASCADE
+    )
+    product_line = models.ForeignKey(
+        'ProductLine',
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        unique_together = ('variation', 'product_line')
+
+
 class ProductLine(models.Model):
     """Product line object."""
     user = models.ForeignKey(to=User, on_delete=models.CASCADE)
@@ -110,6 +176,11 @@ class ProductLine(models.Model):
     product = models.ForeignKey(
         to=Product,
         on_delete=models.CASCADE,
+        related_name='product_lines'
+    )
+    variations = models.ManyToManyField(
+        to=Variation,
+        through=ProductLineVariation,
         related_name='product_lines'
     )
     is_active = models.BooleanField(default=True)

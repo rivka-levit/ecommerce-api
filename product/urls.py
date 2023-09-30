@@ -15,6 +15,7 @@ router.register('product-lines',
                 views.ProductLineViewSet,
                 basename='product-line'),
 router.register('images', views.ProductImageViewSet, basename='image')
+router.register('attributes', views.AttributeViewSet, basename='attribute')
 
 urlpatterns = [
     path('', include(router.urls)),

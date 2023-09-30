@@ -35,6 +35,17 @@ def create_product_line(**params) -> models.ProductLine:
     return models.ProductLine.objects.create(**defaults)
 
 
+def create_attribute(user, **params):
+    """Create and return a sample attribute."""
+    defaults = {
+        'name': 'color',
+        'description': 'Sample description.'
+    }
+    defaults.update(**params)
+
+    return models.Attribute.objects.create(user=user, **defaults)
+
+
 class ModelTests(TestCase):
     """Tests for models."""
 
@@ -47,8 +58,8 @@ class ModelTests(TestCase):
             user=self.user
         )
 
-        self.assertEqual(category.name, 'Shoes')
-        self.assertEqual(str(category), 'Shoes')
+        self.assertEqual(category.name, 'shoes')
+        self.assertEqual(str(category), 'shoes')
 
     def test_create_category_with_parent(self):
         category = models.Category.objects.create(
@@ -115,8 +126,8 @@ class ModelTests(TestCase):
     def test_create_brand(self):
         brand = models.Brand.objects.create(name='Nike', user=self.user)
 
-        self.assertEqual(brand.name, 'Nike')
-        self.assertEqual(str(brand), 'Nike')
+        self.assertEqual(brand.name, 'nike')
+        self.assertEqual(str(brand), 'nike')
 
     def test_create_product(self):
         brand = models.Brand.objects.create(name='Nike', user=self.user)
@@ -143,6 +154,24 @@ class ModelTests(TestCase):
         product = create_product(user=self.user)
 
         self.assertTrue(product.slug)
+
+    def test_product_attributes_assigned_success(self):
+        """Test assigning attributes to a product."""
+
+        a1 = create_attribute(self.user)
+        a2 = create_attribute(self.user, name='size')
+        a3 = create_attribute(self.user, name='resolution')
+
+        product = create_product(user=self.user)
+        product.attributes.add(a1)
+        product.attributes.add(a2)
+
+        product.refresh_from_db()
+        product_attributes = product.attributes.all()
+
+        self.assertIn(a1, product_attributes)
+        self.assertIn(a2, product_attributes)
+        self.assertNotIn(a3, product_attributes)
 
     def test_create_product_line_success(self):
         """Test creating a product line for a product successful."""
@@ -234,3 +263,139 @@ class ProductLineModelTests(TestCase):
         qs = self.product.product_lines.all()
         self.assertEqual(len(qs), 1)
         self.assertEqual(qs[0].sku, 'first')
+
+
+class AttributesModelsTests(TestCase):
+    """Tests for the models of Attribute, Variation, ProductLineVariation."""
+
+    def setUp(self) -> None:
+        self.user = create_user(email='attr_test@example.com')
+        self.product = create_product(user=self.user)
+        self.product_line = create_product_line(
+            user=self.user,
+            product=self.product
+        )
+
+    def test_create_attribute_success(self):
+        """Test creating an attribute"""
+
+        payload = {
+            'name': 'size',
+            "description": 'Sample description',
+        }
+
+        attribute = create_attribute(user=self.user, **payload)
+
+        for k, v in payload.items():
+            self.assertEqual(getattr(attribute, k), payload[k])
+
+    def test_create_attribute_assigned_to_category(self):
+        """Test creating an attribute and assigning it to a category."""
+
+        category = models.Category.objects.create(user=self.user, name='Bags')
+        attribute = create_attribute(self.user, name='Color')
+
+        attribute.categories.add(category)
+        category.refresh_from_db()
+
+        self.assertIn(category, attribute.categories.all())
+
+    def test_filter_attributes_by_category(self):
+        """Test filtering attributes by category."""
+
+        category = models.Category.objects.create(user=self.user, name='Bags')
+
+        attr_1 = create_attribute(self.user, name='Color')
+        attr_2 = create_attribute(self.user, name='Resolution')
+
+        attr_1.categories.add(category)
+        attr_1.refresh_from_db()
+
+        attributes = models.Attribute.objects.filter(categories__in=(category,))
+
+        self.assertIn(attr_1, attributes)
+        self.assertNotIn(attr_2, attributes)
+
+    def test_create_variations(self):
+        """Test creating variations of an attribute"""
+
+        payload = {'name': 'red'}
+
+        attribute = create_attribute(self.user)
+        variation = models.Variation.objects.create(
+            user=self.user,
+            attribute=attribute,
+            **payload
+        )
+
+        self.assertIsInstance(variation, models.Variation)
+        self.assertEqual(variation.name, payload['name'])
+
+    def test_create_product_line_variation(self):
+        """
+        Test creating a variation of an attribute that belongs to a
+        particular product line.
+        """
+        attribute = create_attribute(self.user)
+
+        payload = {
+            'user': self.user,
+            'attribute': attribute,
+            'name': 'red'
+        }
+
+        variation = models.Variation.objects.create(**payload)
+
+        pl_variation = models.ProductLineVariation(
+            user=self.user,
+            variation=variation,
+            product_line=self.product_line
+        )
+
+        self.assertIsInstance(pl_variation, models.ProductLineVariation)
+        self.assertEqual(pl_variation.variation, variation)
+        self.assertEqual(pl_variation.product_line, self.product_line)
+
+    def test_product_line_contains_its_variations(self):
+        """
+        Test product line retrieves just the variations of this
+        product line.
+        """
+
+        attribute = create_attribute(self.user)
+        pl_2 = create_product_line(
+            user=self.user,
+            product=self.product,
+            sku='another product line'
+        )
+
+        v1 = models.Variation.objects.create(
+            user=self.user,
+            attribute=attribute,
+            name='red'
+        )
+        v2 = models.Variation.objects.create(
+            user=self.user,
+            attribute=attribute,
+            name='blue'
+        )
+
+        models.ProductLineVariation.objects.create(
+            user=self.user,
+            variation=v1,
+            product_line=self.product_line
+        )
+
+        models.ProductLineVariation.objects.create(
+            user=self.user,
+            variation=v2,
+            product_line=pl_2
+        )
+
+        self.product_line.refresh_from_db()
+        pl_2.refresh_from_db()
+
+        self.assertIn(v1, self.product_line.variations.all())
+        self.assertIn(v2, pl_2.variations.all())
+        self.assertNotIn(v1, pl_2.variations.all())
+        self.assertNotIn(v2, self.product_line.variations.all())
