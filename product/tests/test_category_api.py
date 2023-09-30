@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from product.models import Category
+from product.models import Category, Attribute
 
 CATEGORIES_URL = reverse('category-list')
 
@@ -112,6 +112,30 @@ class PrivateCategoryApiTests(TestCase):
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         cat.refresh_from_db()
         self.assertEqual(cat.name, payload['name'].lower())
+
+    def test_update_category_with_attributes(self):
+        """Test updating a category with attributes proper to it."""
+
+        category = create_category(self.user)
+        attr1 = Attribute.objects.create(
+            user=self.user,
+            name='a1'
+        )
+        payload = {
+            'attributes': [
+                {'name': 'color'},
+                {'name': 'size'}
+            ]
+        }
+        url = detail_url(category.id)
+
+        r = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        category.refresh_from_db()
+        attributes = category.attributes.all()
+        self.assertEqual(len(attributes), len(payload['attributes']))
+        self.assertNotIn(attr1, attributes)
 
     def test_delete_category(self):
         cat = create_category(self.user)

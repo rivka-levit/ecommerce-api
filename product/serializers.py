@@ -44,7 +44,7 @@ class CategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def create(self, validated_data):
-        """Create a category with attributes."""
+        """Create category with attributes."""
 
         attributes = validated_data.pop('attributes', [])
 
@@ -58,6 +58,27 @@ class CategorySerializer(serializers.ModelSerializer):
             )
 
         return category
+
+    def update(self, instance, validated_data):
+        """Update category with attributes."""
+
+        attributes = validated_data.pop('attributes', [])
+
+        instance.attributes.clear()
+
+        for attribute in attributes:
+            self._get_or_create_and_assign_attribute(
+                attribute,
+                Attribute,
+                instance
+            )
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        return instance
 
     def _get_or_create_and_assign_attribute(self, attribute, model, category):
         """Get attribute if exists or create it, and assign to the category."""
