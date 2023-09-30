@@ -38,7 +38,7 @@ class BaseStoreViewSet(viewsets.ModelViewSet):
 
 class CategoryViewSet(BaseStoreViewSet):
     """View for managing category APIs."""
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().prefetch_related(Prefetch('attributes'))
     serializer_class = serializers.CategorySerializer
 
 
@@ -71,7 +71,11 @@ class ProductViewSet(BaseStoreViewSet):
     queryset = Product.objects.all().select_related(
         'category', 'brand'
     ).prefetch_related(
+        Prefetch('attributes')
+    ).prefetch_related(
         Prefetch('product_lines__images')
+    ).prefetch_related(
+        Prefetch('product_lines__variations__attribute')
     )
     serializer_class = serializers.ProductSerializer
     lookup_field = 'slug'
@@ -171,7 +175,13 @@ class ProductLineViewSet(
     serializer_class = serializers.CreateProductLineSerializer
 
     def get_queryset(self):
-        queryset = ProductLine.objects.filter(user=self.request.user)
+        queryset = ProductLine.objects.filter(
+            user=self.request.user
+        ).prefetch_related(
+            Prefetch('images')
+        ).prefetch_related(
+            Prefetch('variations__attribute')
+        )
         slug = self.request.query_params.get('product_slug', None)
 
         if slug:
