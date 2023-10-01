@@ -57,6 +57,15 @@ class CategoryViewSet(BaseStoreViewSet):
     lookup_field = 'slug'
 
 
+@extend_schema_view(
+    list=extend_schema(description='Retrieve the list of all the brands.'),
+    create=extend_schema(description='Create a new brand.'),
+    retrieve=extend_schema(description='Retrieve a single brand.'),
+    update=extend_schema(description='Full update of a brand. All the '
+                                     'fields must be filled.'),
+    partial_update=extend_schema(description='Partial update of a brand.'),
+    destroy=extend_schema(description='Remove a brand from the system.')
+)
 class BrandViewSet(BaseStoreViewSet):
     """View for managing brand APIs."""
     queryset = Brand.objects.filter(is_active=True)
