@@ -47,6 +47,17 @@ def create_attribute(user, **params):
     return models.Attribute.objects.create(user=user, **defaults)
 
 
+def create_category(user, **params):
+    """Create and return a sample category."""
+
+    defaults = {
+        'name': 'Sample Category',
+    }
+    defaults.update(**params)
+
+    return models.Category.objects.create(user=user, **defaults)
+
+
 class ModelTests(TestCase):
     """Tests for models."""
 
@@ -54,37 +65,40 @@ class ModelTests(TestCase):
         self.user = create_user()
 
     def test_create_category_without_parent(self):
-        category = models.Category.objects.create(
-            name='Shoes',
-            user=self.user
-        )
+        """Test creating a category without parend."""
 
-        self.assertEqual(category.name, 'shoes')
-        self.assertEqual(str(category), 'shoes')
-        self.assertEqual(category.slug, slugify('Shoes'))
+        payload = {'name': 'Shoes'}
+        category = create_category(self.user, **payload)
+
+        self.assertEqual(category.name, payload['name'].lower())
+        self.assertEqual(str(category), payload['name'].lower())
+        self.assertEqual(category.slug, slugify(payload['name']))
 
     def test_create_category_duplicated_slug_error(self):
         """
         Test create category with the name and slug not unique raises error.
         """
 
-        models.Category.objects.create(
-            name='Sample name',
-            user=self.user
-        )
+        create_category(self.user)
 
         with self.assertRaises(ValidationError):
-            models.Category.objects.create(
-                name='Sample name',
-                user=self.user
-            )
+            create_category(self.user)
+
+    def test_create_category_with_custom_slug(self):
+        """Test creating category with custom slug passed"""
+
+        payload = {'slug': 'sample-custom-slug'}
+
+        category = create_category(self.user, **payload)
+
+        self.assertEqual(category.slug, payload['slug'])
 
     def test_create_category_with_parent(self):
-        category = models.Category.objects.create(
+        category = create_category(
             name='Clothes',
             user=self.user
         )
-        sub_category = models.Category.objects.create(
+        sub_category = create_category(
             name='Shoes',
             parent=category,
             user=self.user
@@ -92,49 +106,28 @@ class ModelTests(TestCase):
         self.assertIn(sub_category, category.children.all())
 
     def test_create_three_categories_to_same_parent(self):
-        parent_category = models.Category.objects.create(
-            user=self.user,
-            name='Parent'
-        )
-        cat1 = models.Category.objects.create(
-            user=self.user,
-            name='Cat1',
-            parent=parent_category
-        )
-        cat2 = models.Category.objects.create(
-            user=self.user,
-            name='Cat2',
-            parent=parent_category
-        )
-        cat3 = models.Category.objects.create(
-            user=self.user,
-            name='Cat3',
-            parent=parent_category
-        )
+        """Test creating three categories to the same parent category."""
+
+        parent = create_category(user=self.user, name='Parent')
+
+        cat1 = create_category(user=self.user, name='Cat1', parent=parent)
+        cat2 = create_category(user=self.user, name='Cat2', parent=parent)
+        cat3 = create_category(user=self.user, name='Cat3', parent=parent)
+
         for cat in (cat1, cat2, cat3):
-            self.assertEqual(cat.parent, parent_category)
-            parent_category.refresh_from_db()
-            self.assertEqual(parent_category.children.count(), 3)
+            self.assertEqual(cat.parent, parent)
+            parent.refresh_from_db()
+            self.assertEqual(parent.children.count(), 3)
 
     def test_delete_parent_category_set_null_to_children(self):
         """Test deleting a category and assign None value to its children"""
 
-        parent_category = models.Category.objects.create(
-            user=self.user,
-            name='Parent'
-        )
-        child1 = models.Category.objects.create(
-            user=self.user,
-            name='ch1',
-            parent=parent_category
-        )
-        child2 = models.Category.objects.create(
-            user=self.user,
-            name='ch2',
-            parent=parent_category
-        )
+        parent = create_category(user=self.user, name='Parent')
 
-        parent_category.delete()
+        child1 = create_category(user=self.user, name='ch1', parent=parent)
+        child2 = create_category(user=self.user, name='ch2', parent=parent)
+
+        parent.delete()
 
         child1.refresh_from_db()
         child2.refresh_from_db()
@@ -195,7 +188,7 @@ class ModelTests(TestCase):
         """Test creating a product line for a product successful."""
 
         brand = models.Brand.objects.create(name='Desigual', user=self.user)
-        category = models.Category.objects.create(name='Bags', user=self.user)
+        category = create_category(name='Bags', user=self.user)
 
         product = models.Product.objects.create(
             name='Fashion bag',
