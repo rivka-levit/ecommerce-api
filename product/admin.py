@@ -11,6 +11,7 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ['name', 'is_active']
     readonly_fields = ['id']
     list_editable = ['is_active']
+    prepopulated_fields = {'slug': ['name']}
 
 
 @admin.register(Brand)
@@ -18,6 +19,7 @@ class BrandAdmin(admin.ModelAdmin):
     list_display = ['name', 'is_active']
     readonly_fields = ['id']
     list_editable = ['is_active']
+    prepopulated_fields = {'slug': ['name']}
 
 
 @admin.register(Attribute)
