@@ -36,6 +36,17 @@ class BaseStoreViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+@extend_schema_view(
+    list=extend_schema(description='Retrieve the list of all the categories.'),
+    create=extend_schema(description='Create a new category. Can be assigned '
+                                     'to parent category by indicating its '
+                                     '"id" in the field "parent".'),
+    retrieve=extend_schema(description='Retrieve a single category.'),
+    update=extend_schema(description='Full update of a category. All the '
+                                     'fields must be filled.'),
+    partial_update=extend_schema(description='Partial update of a category.'),
+    destroy=extend_schema(description='Remove a category from the system.')
+)
 class CategoryViewSet(BaseStoreViewSet):
     """View for managing category APIs."""
 
