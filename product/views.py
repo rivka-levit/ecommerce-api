@@ -61,6 +61,7 @@ class BrandViewSet(BaseStoreViewSet):
     """View for managing brand APIs."""
     queryset = Brand.objects.filter(is_active=True)
     serializer_class = serializers.BrandSerializer
+    lookup_field = 'slug'
 
 
 @extend_schema_view(

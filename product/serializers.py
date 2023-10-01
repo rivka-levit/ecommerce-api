@@ -95,7 +95,7 @@ class BrandSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Brand
-        fields = ['id', 'name']
+        fields = ['name', 'slug']
         read_only_fields = ['id']
 
 

@@ -14,8 +14,8 @@ from product.models import Brand
 BRANDS_URL = reverse('brand-list')
 
 
-def detail_url(brand_id):
-    return reverse('brand-detail', args=[brand_id])
+def detail_url(brand_slug):
+    return reverse('brand-detail', args=[brand_slug])
 
 
 def create_brand(user, **params):
@@ -58,7 +58,7 @@ class PrivateBrandTests(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
-        brand = Brand.objects.get(id=r.data['id'])
+        brand = Brand.objects.get(slug=r.data['slug'])
         self.assertEqual(brand.name, payload['name'].lower())
         self.assertEqual(brand.slug, slugify(payload['name']))
 
@@ -66,18 +66,18 @@ class PrivateBrandTests(TestCase):
         """Test retrieving a single brand."""
         brand = create_brand(user=self.user)
 
-        url = detail_url(brand.id)
+        url = detail_url(brand.slug)
         r = self.client.get(url)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
-        self.assertEqual(r.data['id'], brand.id)
+        self.assertEqual(r.data['slug'], brand.slug)
 
     def test_update_brand(self):
         """Test updating a brand."""
         brand = create_brand(name='Nike', user=self.user)
         payload = {'name': 'Adidas'}
 
-        url = detail_url(brand.id)
+        url = detail_url(brand.slug)
         r = self.client.patch(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -88,7 +88,7 @@ class PrivateBrandTests(TestCase):
         """Test removing a brand."""
         brand = create_brand(user=self.user)
 
-        url = detail_url(brand.id)
+        url = detail_url(brand.slug)
         r = self.client.delete(url)
 
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
