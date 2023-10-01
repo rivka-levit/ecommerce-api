@@ -40,7 +40,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'parent', 'attributes']
+        fields = ['id', 'name', 'slug', 'parent', 'attributes']
         read_only_fields = ['id']
 
     def create(self, validated_data):

@@ -64,6 +64,8 @@ class PrivateCategoryApiTests(TestCase):
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(len(r.data), 2)
+        for category in r.data:
+            self.assertIn('slug', category)
 
     def test_create_category_without_parent(self):
         """Test creating a category that doesn't have any parent category."""
