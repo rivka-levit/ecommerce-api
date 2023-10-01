@@ -209,8 +209,8 @@ class ProductLineModelTests(TestCase):
         self.product = create_product(user=self.user)
 
     def test_create_product_line_ordering_auto_add(self):
-        """T
-        est adding the order number to the ordering fild automatically,
+        """
+        Test adding the order number to the ordering fild automatically,
         when creating a product line
         """
 

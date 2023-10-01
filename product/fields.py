@@ -28,7 +28,7 @@ class OrderField(models.PositiveIntegerField):
                 checks.Error('OrderField must define a "to_field" attribute.')
             ]
 
-        fields = [field.name for field in self.model._meta.get_fields()]
+        fields = {field.name for field in self.model._meta.get_fields()}
 
         if self.to_field not in fields:
             return [
