@@ -24,12 +24,13 @@ def product_image_file_path(instance, filename):
 
 class Category(MPTTModel):
     """Category object."""
-    name = models.CharField(max_length=255)
+
+    name = models.CharField(max_length=210)
+    slug = models.SlugField(max_length=255, null=True, blank=True)
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
         related_name='categories')
-    slug = models.SlugField(max_length=255, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     parent = TreeForeignKey(
         'self',
@@ -62,7 +63,7 @@ class Category(MPTTModel):
             )
 
     def save(self, *args, **kwargs):
-        """Auto field creation and validating before saving."""
+        """Auto field creation and validation before saving."""
 
         self.name = self.name.lower()
 
@@ -76,7 +77,9 @@ class Category(MPTTModel):
 
 class Brand(models.Model):
     """Brand object."""
-    name = models.CharField(max_length=255)
+
+    name = models.CharField(max_length=210)
+    slug = models.SlugField(max_length=255, null=True, blank=True)
     user = models.ForeignKey(
         to=User,
         on_delete=models.CASCADE,
@@ -86,9 +89,29 @@ class Brand(models.Model):
     def __str__(self):
         return self.name
 
+    def clean(self):
+        """Check if slug is unique for related user."""
+
+        qs = Brand.objects.filter(
+            user=self.user, slug=self.slug
+        ).exclude(pk=self.pk)
+
+        if qs:
+            raise ValidationError(
+                'The slug must be unique for this particular user.'
+            )
+
     def save(self, *args, **kwargs):
+        """Auto field creation and validation before saving."""
+
         self.name = self.name.lower()
-        super(Brand, self).save(*args, **kwargs)
+
+        if not self.slug:
+            self.slug = slugify(self.name)
+
+        self.full_clean()
+
+        return super(Brand, self).save(*args, **kwargs)
 
 
 class Product(models.Model):

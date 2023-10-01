@@ -3,6 +3,7 @@ Tests for brand APIs.
 """
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
 
 from django.test import TestCase
 from rest_framework.test import APIClient
@@ -41,13 +42,13 @@ class PrivateBrandTests(TestCase):
 
     def test_retrieve_brands_list(self):
         """Test retrieving the list of brands."""
-        for _ in range(3):
-            create_brand(self.user)
+        create_brand(self.user)
+        create_brand(self.user, name='Another brand')
 
         r = self.client.get(BRANDS_URL)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(r.data), 3)
+        self.assertEqual(len(r.data), 2)
 
     def test_create_brand(self):
         """Test creating a brand via api"""
@@ -59,6 +60,7 @@ class PrivateBrandTests(TestCase):
 
         brand = Brand.objects.get(id=r.data['id'])
         self.assertEqual(brand.name, payload['name'].lower())
+        self.assertEqual(brand.slug, slugify(payload['name']))
 
     def test_get_single_brand(self):
         """Test retrieving a single brand."""
