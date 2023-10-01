@@ -6,7 +6,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 from user.models import User
 
-from product.fields import OrderField
+from product.fields import OrderField, SlugUniqueToField
 
 from datetime import datetime
 
@@ -29,6 +29,13 @@ class Category(MPTTModel):
         to=User,
         on_delete=models.CASCADE,
         related_name='categories')
+    slug = SlugUniqueToField(
+        max_length=255,
+        unique_to='user',
+        slug_from='name',
+        null=True,
+        blank=True
+    )
     is_active = models.BooleanField(default=True)
     parent = TreeForeignKey(
         'self',
@@ -43,14 +50,28 @@ class Category(MPTTModel):
         verbose_name_plural = 'categories'
 
     class MPTTMeta:
-        order_insertion_by = ['name']
+        order_insertion_by = ['slug']
 
     def __str__(self):
         return self.name
 
+    def clean(self):
+        """Check if slug is unique for related user."""
+
+        qs = Category.objects.filter(user=self.user).exclude(pk=self.pk)
+
+        for obj in qs:
+            if self.slug == obj.slug:
+                raise ValidationError(
+                    'The slug must be unique for this particular user.'
+                )
+
     def save(self, *args, **kwargs):
         self.name = self.name.lower()
-        super(Category, self).save(*args, **kwargs)
+        if not self.slug:
+            self.slug = slugify(self.name)
+        self.full_clean()
+        return super(Category, self).save(*args, **kwargs)
 
 
 class Brand(models.Model):

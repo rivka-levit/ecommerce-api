@@ -18,9 +18,15 @@ def detail_url(category_id):
     return reverse('category-detail', args=[category_id])
 
 
-def create_category(user):
+def create_category(user, **params):
     """Create a sample category for testing purposes."""
-    return Category.objects.create(user=user, name='Sample Name')
+
+    defaults = {
+        'name': 'Sample name'
+    }
+    defaults.update(**params)
+
+    return Category.objects.create(user=user, **defaults)
 
 
 class PublicCategoryApiTests(TestCase):
@@ -52,7 +58,7 @@ class PrivateCategoryApiTests(TestCase):
     def test_get_category_list_success(self):
         """Test retrieving the list of categories."""
         create_category(self.user)
-        create_category(self.user)
+        create_category(self.user, name='another name')
 
         r = self.client.get(CATEGORIES_URL)
 

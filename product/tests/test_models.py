@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.utils.text import slugify
 
 from product import models
 
@@ -60,6 +61,23 @@ class ModelTests(TestCase):
 
         self.assertEqual(category.name, 'shoes')
         self.assertEqual(str(category), 'shoes')
+        self.assertEqual(category.slug, slugify('Shoes'))
+
+    def test_create_category_duplicated_slug_error(self):
+        """
+        Test create category with the name and slug not unique raises error.
+        """
+
+        models.Category.objects.create(
+            name='Sample name',
+            user=self.user
+        )
+
+        with self.assertRaises(ValidationError):
+            models.Category.objects.create(
+                name='Sample name',
+                user=self.user
+            )
 
     def test_create_category_with_parent(self):
         category = models.Category.objects.create(

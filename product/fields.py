@@ -1,5 +1,6 @@
 from django.core import checks
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.utils.text import slugify
 from django.db import models
 
 
@@ -60,3 +61,83 @@ class OrderField(models.PositiveIntegerField):
             setattr(model_instance, self.attname, value)
 
         return super().pre_save(model_instance, add)
+
+
+class SlugUniqueToField(models.SlugField):
+
+    description = 'Slug field with unique value to a particular field.'
+
+    def __init__(self, unique_to=None, slug_from=None, *args, **kwargs):
+        self.unique_to = unique_to
+        self.slug_from = slug_from
+        super().__init__(*args, **kwargs)
+
+    def check(self, **kwargs):
+        return [
+            *super().check(**kwargs),
+            *self._check_field_attribute(**kwargs)
+        ]
+
+    def _check_field_attribute(self, **kwargs):
+        """
+        Checks 'unique_to' attribute has been passed and matches an existing
+        model field.
+        """
+
+        if self.unique_to is None:
+            return [
+                checks.Error(
+                    'SlugUniqueToField must define a "unique_to" attribute.'
+                )
+            ]
+
+        if self.slug_from is None:
+            return [
+                checks.Error(
+                    'SlugUniqueToField must define a "slug_from" attribute.'
+                )
+            ]
+
+        fields = {field.name for field in self.model._meta.get_fields()}
+
+        if self.unique_to not in fields:
+            return [
+                checks.Error(
+                    'Field name passed with "unique_to" attribute does not '
+                    'match an existing model field.'
+                )
+            ]
+
+        if self.slug_from not in fields:
+            return [
+                checks.Error(
+                    'Field name passed with "slug_from" attribute does not '
+                    'match an existing model field.'
+                )
+            ]
+
+        return []
+
+    # def pre_save(self, model_instance, add):
+    #     """
+    #     Adding slug automatically if not passed.
+    #     """
+    #
+    #     if getattr(model_instance, self.attname) is None:
+    #
+    #         from_field = self.slug_from
+    #         field_name = getattr(model_instance, from_field)
+    #
+    #         setattr(model_instance, self.attname, slugify(field_name))
+    #
+    #     # user = model_instance.user
+    #     # qs = self.model.objects.filter(
+    #     #     user=user, slug=self.attname
+    #     # ).exclude(pk=model_instance.pk).exists()
+    #     #
+    #     # if qs:
+    #     #     raise ValidationError(
+    #     #         'The slug must be unique for this particular user.'
+    #     #     )
+    #
+    #     return super().pre_save(model_instance, add)
