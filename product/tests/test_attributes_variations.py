@@ -197,7 +197,7 @@ class AttributeTests(TestCase):
         a1.categories.add(category)
         a2.categories.add(category)
 
-        params = {'category': category.id}
+        params = {'category': category.slug}
 
         r = self.client.get(ATTRIBUTES_URL, params)
 
@@ -219,62 +219,12 @@ class AttributeTests(TestCase):
 
         product.attributes.add(a1)
 
-        params = {'product_slug': product.slug}
+        params = {'product': product.slug}
 
         r = self.client.get(ATTRIBUTES_URL, params)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(len(r.data), 1)
-
-    # def test_create_attribute_assigned_to_category(self):
-    #     """Test creating an attribute assigned to a category."""
-    #
-    #     category = Category.objects.create(user=self.user, name='Bags')
-    #
-    #     payload = {
-    #         'name': 'Color',
-    #         'description': 'Sample description',
-    #         'categories': [
-    #             {
-    #                 'id': category.id,
-    #                 'name': 'bags'
-    #             }
-    #         ]
-    #     }
-    #
-    #     r = self.client.post(ATTRIBUTES_URL, payload, format='json')
-    #
-    #     self.assertEqual(r.status_code, status.HTTP_201_CREATED)
-    #     self.assertEqual(len(r.data['categories']), 1)
-    #     cat1 = r.data['categories'][0]
-    #     self.assertEqual(cat1['name'], category.name)
-
-    # def test_update_attribute_assign_category(self):
-    #     """Test updating an attribute and assigning a category."""
-    #
-    #     category = Category.objects.create(user=self.user, name='Shoes')
-    #
-    #     attribute = create_attribute(self.user, name='color')
-    #
-    #     payload = {
-    #         'description': 'Another description',
-    #         'categories': [
-    #             {
-    #                 'id': category.id,
-    #                 'name': category.name
-    #             }
-    #         ]
-    #     }
-    #
-    #     attribute.refresh_from_db()
-    #
-    #     url = get_attr_detail_url(attribute.id)
-    #     r = self.client.patch(url, payload, format='json')
-    #
-    #     self.assertEqual(r.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(len(r.data['categories']), 1)
-    #     cat1 = r.data['categories'][0]
-    #     self.assertEqual(cat1['name'], category.name)
 
 
 class VariationApisTests(TestCase):

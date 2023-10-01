@@ -399,12 +399,12 @@ class ProductImageViewSet(
         parameters=[
             OpenApiParameter(
                 'category',
-                OpenApiTypes.INT,
-                description='Category id',
+                OpenApiTypes.STR,
+                description='Category slug',
                 required=False
             ),
             OpenApiParameter(
-                'product_slug',
+                'product',
                 OpenApiTypes.STR,
                 description='Product slug',
                 required=False
@@ -421,12 +421,12 @@ class AttributeViewSet(BaseStoreViewSet):
     def get_queryset(self):
         """Filter queryset by category or product."""
         qs = super().get_queryset()
-        category_id = self.request.query_params.get('category', None)
-        product_slug = self.request.query_params.get('product_slug', None)
+        category_slug = self.request.query_params.get('category', None)
+        product_slug = self.request.query_params.get('product', None)
 
-        if category_id:
+        if category_slug:
             try:
-                category = Category.objects.get(id=category_id)
+                category = Category.objects.get(slug=category_slug)
                 qs = qs.filter(categories__in=[category])
             except Category.DoesNotExist:
                 pass
