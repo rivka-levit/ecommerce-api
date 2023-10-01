@@ -39,6 +39,11 @@ class Category(MPTTModel):
         blank=True,
         related_name='children'
     )
+    attributes = models.ManyToManyField(
+        to='Attribute',
+        blank=True,
+        related_name='categories'
+    )
 
     class Meta:
         verbose_name = 'category'
@@ -145,7 +150,7 @@ class Product(models.Model):
     )
     is_digital = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     def save(self, *args, **kwargs):
         if self._state.adding:
@@ -166,11 +171,6 @@ class Attribute(models.Model):
     )
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
-    categories = models.ManyToManyField(
-        to=Category,
-        blank=True,
-        related_name='attributes'
-    )
 
     def __str__(self):
         return self.name
@@ -216,6 +216,7 @@ class ProductLine(models.Model):
     ordering = OrderField(to_field='product', blank=True, null=True)
     price = models.DecimalField(max_digits=5, decimal_places=2)
     sku = models.CharField(max_length=255)
+    weight = models.FloatField(null=True, blank=True)
     stock_qty = models.IntegerField()
     product = models.ForeignKey(
         to=Product,
