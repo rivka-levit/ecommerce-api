@@ -38,10 +38,12 @@ class BaseStoreViewSet(viewsets.ModelViewSet):
 
 class CategoryViewSet(BaseStoreViewSet):
     """View for managing category APIs."""
+
     queryset = Category.objects.filter(
         is_active=True
     ).prefetch_related(Prefetch('attributes'))
     serializer_class = serializers.CategorySerializer
+    lookup_field = 'slug'
 
 
 class BrandViewSet(BaseStoreViewSet):

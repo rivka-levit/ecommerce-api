@@ -13,9 +13,9 @@ from product.models import Category, Attribute
 CATEGORIES_URL = reverse('category-list')
 
 
-def detail_url(category_id):
+def detail_url(category_slug):
     """Create and return the url of detail page."""
-    return reverse('category-detail', args=[category_id])
+    return reverse('category-detail', args=[category_slug])
 
 
 def create_category(user, **params):
@@ -103,18 +103,18 @@ class PrivateCategoryApiTests(TestCase):
 
     def test_get_single_category(self):
         cat = create_category(self.user)
-        url = detail_url(cat.id)
+        url = detail_url(cat.slug)
 
         r = self.client.get(url)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
-        self.assertEqual(r.data['id'], cat.id)
+        self.assertEqual(r.data['slug'], cat.slug)
 
     def test_update_category(self):
         cat = create_category(self.user)
         payload = {'name': 'Clothes'}
 
-        url = detail_url(cat.id)
+        url = detail_url(cat.slug)
         r = self.client.patch(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
@@ -135,7 +135,7 @@ class PrivateCategoryApiTests(TestCase):
                 {'name': 'size'}
             ]
         }
-        url = detail_url(category.id)
+        url = detail_url(category.slug)
 
         r = self.client.patch(url, payload, format='json')
 
@@ -148,7 +148,7 @@ class PrivateCategoryApiTests(TestCase):
     def test_delete_category(self):
         cat = create_category(self.user)
 
-        url = detail_url(cat.id)
+        url = detail_url(cat.slug)
         r = self.client.delete(url)
 
         self.assertEqual(r.status_code, status.HTTP_204_NO_CONTENT)
