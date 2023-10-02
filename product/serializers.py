@@ -280,8 +280,11 @@ class CreateProductLineSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for products."""
 
-    brand = BrandSerializer(required=False)
-    category = CategorySerializer(required=False)
+    brand_slug = serializers.CharField(source='brand.slug', required=False)
+    category_slug = serializers.CharField(
+        source='category.slug',
+        required=False
+    )
     attributes = AttributeSerializer(many=True, required=False)
     product_lines = serializers.SerializerMethodField(
         'get_related_product_lines',
@@ -290,7 +293,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['name', 'description', 'slug', 'brand', 'category',
+        fields = ['name', 'description', 'slug', 'brand_slug', 'category_slug',
                   'is_digital', 'is_active', 'created_at', 'attributes',
                   'product_lines']
         read_only_fields = ['slug']
@@ -333,14 +336,24 @@ class ProductSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create a product."""
 
-        brand = validated_data.pop('brand', None)
-        category = validated_data.pop('category', None)
+        brand_slug = validated_data.pop('brand', None)
+        category_slug = validated_data.pop('category', None)
         attributes = validated_data.pop('attributes', [])
 
         product = Product.objects.create(**validated_data)
 
-        self._get_or_create_and_assign_brand(brand, Brand, product)
-        self._get_or_create_and_assign_category(category, Category, product)
+        if category_slug:
+            category = get_object_or_404(Category, slug=category_slug['slug'])
+            product.category = category
+
+        if brand_slug:
+            brand = get_object_or_404(Brand, slug=brand_slug['slug'])
+            product.brand = brand
+
+        product.save()
+
+        # self._get_or_create_and_assign_brand(brand, Brand, product)
+        # self._get_or_create_and_assign_category(category, Category, product)
 
         for attribute in attributes:
             self._get_or_create_and_assign_attribute(
@@ -354,12 +367,21 @@ class ProductSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """Update a product."""
 
-        brand = validated_data.pop('brand', None)
-        category = validated_data.pop('category', None)
+        brand_slug = validated_data.pop('brand', None)
+        category_slug = validated_data.pop('category', None)
         attributes = validated_data.pop('attributes', [])
 
-        self._get_or_create_and_assign_brand(brand, Brand, instance)
-        self._get_or_create_and_assign_category(category, Category, instance)
+        if category_slug:
+            category = get_object_or_404(Category, slug=category_slug['slug'])
+            instance.category = category
+
+        if brand_slug:
+            brand = get_object_or_404(Brand, slug=brand_slug['slug'])
+            instance.brand = brand
+
+
+        # self._get_or_create_and_assign_brand(brand, Brand, instance)
+        # self._get_or_create_and_assign_category(category, Category, instance)
 
         instance.attributes.clear()
 

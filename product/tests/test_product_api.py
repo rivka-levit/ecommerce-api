@@ -78,47 +78,48 @@ class TestProductApi(TestCase):
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(r.data, serializer.data)
 
-    def test_create_product_with_brand(self):
+    def test_create_product_assign_brand(self):
         """Test creating a product with brand."""
+
+        brand = Brand.objects.create(user=self.user, name='Nike')
+
         payload = {
             'name': 'Snickers',
             'description': 'Fashion snickers',
-            'brand': {'name': 'Nike'}
+            'brand_slug': brand.slug
         }
-        r = self.client.post(PRODUCTS_URL, payload, format='json')
+        r = self.client.post(PRODUCTS_URL, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
 
         products = Product.objects.all()
         self.assertEqual(products.count(), 1)
         product = products[0]
-        self.assertEqual(product.brand.name, payload['brand']['name'].lower())
+        self.assertEqual(product.brand.slug, payload['brand_slug'])
 
-    def test_create_product_with_category(self):
+    def test_create_product_assign_category(self):
         """Test creating a product with category."""
         parent_category = Category.objects.create(
             user=self.user,
             name='Accessories'
         )
+        category = Category.objects.create(
+            user=self.user,
+            name='Bags',
+            parent=parent_category)
         payload = {
             'name': 'Fashion Bag',
             'description': 'Great fashion bag from leather.',
-            'category': {
-                'name': 'Bags',
-                'parent': parent_category.id,
-            }
+            'category_slug': category.slug
         }
 
-        r = self.client.post(PRODUCTS_URL, payload, format='json')
+        r = self.client.post(PRODUCTS_URL, payload)
 
         self.assertEqual(r.status_code, status.HTTP_201_CREATED)
         products = Product.objects.all()
         self.assertEqual(products.count(), 1)
         product = products[0]
-        self.assertEqual(
-            product.category.name,
-            payload['category']['name'].lower()
-        )
+        self.assertEqual(product.category.slug, payload['category_slug'])
         self.assertEqual(product.category.parent, parent_category)
 
     def test_create_product_with_attributes(self):
@@ -153,20 +154,19 @@ class TestProductApi(TestCase):
     def test_update_product(self):
         """Test updating a product."""
         product = create_product(self.user)
+        brand = Brand.objects.create(user=self.user, name='Desigual')
+        category = Category.objects.create(user=self.user, name='Accessories')
         payload = {
-            'brand': {'name': 'Desigual'},
-            'category': {'name': 'Accessories'}
+            'brand_slug': brand.slug,
+            'category_slug': category.slug
         }
         url = detail_url(product.slug)
-        r = self.client.patch(url, payload, format='json')
+        r = self.client.patch(url, payload)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         product.refresh_from_db()
-        self.assertEqual(product.brand.name, payload['brand']['name'].lower())
-        self.assertEqual(
-            product.category.name,
-            payload['category']['name'].lower()
-        )
+        self.assertEqual(product.brand, brand)
+        self.assertEqual(product.category, category)
 
     def test_update_product_attributes(self):
         """Test updating attributes in a product."""
@@ -211,13 +211,13 @@ class TestProductApi(TestCase):
         create_product(user=self.user, category=category2)
         create_product(user=self.user, category=category1)
 
-        params = {'category': f'{category1.name}'}
+        params = {'category_slug': category1.slug}
         r = self.client.get(PRODUCTS_URL, params)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(len(r.data), 2)
         for item in r.data:
-            self.assertEqual(item['category']['name'], category1.name)
+            self.assertEqual(item['category']['slug'], category1.slug)
 
     def test_filter_products_by_brand(self):
         """Test listing products and filtering it by brand."""
