@@ -79,13 +79,13 @@ class BrandViewSet(BaseStoreViewSet):
             OpenApiParameter(
                 'category',
                 OpenApiTypes.STR,
-                description='Category name',
+                description='Category slug',
                 required=False
             ),
             OpenApiParameter(
                 'brand',
                 OpenApiTypes.STR,
-                description='Brand name',
+                description='Brand slug',
                 required=False
             )
         ]
@@ -107,19 +107,19 @@ class ProductViewSet(BaseStoreViewSet):
 
     def get_queryset(self):
         """Retrieve products, filtering them by category."""
-        category_name = self.request.query_params.get('category')
-        brand_name = self.request.query_params.get('brand')
+        category_slug = self.request.query_params.get('category')
+        brand_slug = self.request.query_params.get('brand')
 
         queryset = super().get_queryset()
 
-        if category_name:
+        if category_slug:
             queryset = queryset.filter(
-                category__name=category_name
+                category__slug=category_slug
             ).order_by('-id').distinct()
 
-        if brand_name:
+        if brand_slug:
             queryset = queryset.filter(
-                brand__name=brand_name
+                brand__slug=brand_slug
             ).order_by('-id').distinct()
 
         return queryset

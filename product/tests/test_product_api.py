@@ -211,13 +211,13 @@ class TestProductApi(TestCase):
         create_product(user=self.user, category=category2)
         create_product(user=self.user, category=category1)
 
-        params = {'category_slug': category1.slug}
+        params = {'category': category1.slug}
         r = self.client.get(PRODUCTS_URL, params)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(len(r.data), 2)
         for item in r.data:
-            self.assertEqual(item['category']['slug'], category1.slug)
+            self.assertEqual(item['category_slug'], category1.slug)
 
     def test_filter_products_by_brand(self):
         """Test listing products and filtering it by brand."""
@@ -227,13 +227,13 @@ class TestProductApi(TestCase):
         create_product(user=self.user, brand=brand2)
         create_product(user=self.user, brand=brand1)
 
-        params = {'brand': f'{brand2.name}'}
+        params = {'brand': brand2.slug}
         r = self.client.get(PRODUCTS_URL, params)
 
         self.assertEqual(r.status_code, status.HTTP_200_OK)
         self.assertEqual(len(r.data), 2)
         for item in r.data:
-            self.assertEqual(item['brand']['name'], brand2.name)
+            self.assertEqual(item['brand_slug'], brand2.slug)
 
     def test_retrieve_product_with_product_lines(self):
         """Test retrieving product liens when getting a product."""

@@ -298,24 +298,6 @@ class ProductSerializer(serializers.ModelSerializer):
                   'product_lines']
         read_only_fields = ['slug']
 
-    def _get_or_create_and_assign_brand(self, brand, model, product):
-        """Get brand if exists or create it, and assign to the product."""
-
-        auth_user = self.context['request'].user
-        brand_obj = get_or_create_parameter(auth_user, brand, model)
-
-        product.brand = brand_obj
-        product.save()
-
-    def _get_or_create_and_assign_category(self, category, model, product):
-        """Get category if exists or create it, and assign to the product."""
-
-        auth_user = self.context['request'].user
-        category_obj = get_or_create_parameter(auth_user, category, model)
-
-        product.category = category_obj
-        product.save()
-
     def _get_or_create_and_assign_attribute(self, attribute, model, product):
         """Get attribute if exists or create it, and assign to the product."""
 
@@ -352,9 +334,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
         product.save()
 
-        # self._get_or_create_and_assign_brand(brand, Brand, product)
-        # self._get_or_create_and_assign_category(category, Category, product)
-
         for attribute in attributes:
             self._get_or_create_and_assign_attribute(
                 attribute,
@@ -378,10 +357,6 @@ class ProductSerializer(serializers.ModelSerializer):
         if brand_slug:
             brand = get_object_or_404(Brand, slug=brand_slug['slug'])
             instance.brand = brand
-
-
-        # self._get_or_create_and_assign_brand(brand, Brand, instance)
-        # self._get_or_create_and_assign_category(category, Category, instance)
 
         instance.attributes.clear()
 
