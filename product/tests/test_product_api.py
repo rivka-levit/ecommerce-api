@@ -29,6 +29,16 @@ def create_product(user, **params) -> Product:
 
     return Product.objects.create(user=user, **defaults)
 
+def create_category(user, **params) -> Category:
+    """Create and return a sample category."""
+
+    defaults = {
+        'name': 'Sample name'
+    }
+    defaults.update(**params)
+
+    return Category.objects.create(user=user, **defaults)
+
 
 class TestProductApi(TestCase):
     """Tests for product APIs."""
@@ -218,6 +228,26 @@ class TestProductApi(TestCase):
         self.assertEqual(len(r.data), 2)
         for item in r.data:
             self.assertEqual(item['category_slug'], category1.slug)
+
+    def test_filter_products_include_subcategories(self):
+        """
+        Test filtering products by category including the products from all
+        the sub-categories of this category.
+        """
+
+        parent_category = create_category(self.user, name='Parent')
+        sub1 = create_category(self.user, name='Sub_1', parent=parent_category)
+        sub2 = create_category(self.user, name='Sub_2', parent=sub1)
+
+        create_product(self.user, name='pr1', category=parent_category)
+        create_product(self.user, name='pr2', category=sub1)
+        create_product(self.user, name='pr3', category=sub2)
+
+        params = {'category': sub1.slug}
+        r = self.client.get(PRODUCTS_URL, params)
+
+        self.assertEqual(r.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(r.data), 2)
 
     def test_filter_products_by_brand(self):
         """Test listing products and filtering it by brand."""

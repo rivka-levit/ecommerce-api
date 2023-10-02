@@ -75,6 +75,8 @@ class BrandViewSet(BaseStoreViewSet):
 
 @extend_schema_view(
     list=extend_schema(
+        description='List of products. Can be filtered by category or brand. '
+                    'Returns also all the sub categories products.',
         parameters=[
             OpenApiParameter(
                 'category',
@@ -113,9 +115,17 @@ class ProductViewSet(BaseStoreViewSet):
         queryset = super().get_queryset()
 
         if category_slug:
-            queryset = queryset.filter(
-                category__slug=category_slug
-            ).order_by('-id').distinct()
+            try:
+                category = Category.objects.get(
+                    user=self.request.user,
+                    slug=category_slug
+                )
+                categories = category.get_descendants(include_self=True)
+
+                queryset = queryset.filter(category__in=categories).distinct()
+
+            except Category.DoesNotExist:
+                pass
 
         if brand_slug:
             queryset = queryset.filter(
