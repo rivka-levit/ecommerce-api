@@ -122,15 +122,15 @@ class ProductViewSet(BaseStoreViewSet):
                 )
                 categories = category.get_descendants(include_self=True)
 
-                queryset = queryset.filter(category__in=categories).distinct()
+                queryset = queryset.filter(
+                    category__in=categories
+                ).order_by('-id').distinct()
 
             except Category.DoesNotExist:
                 pass
 
         if brand_slug:
-            queryset = queryset.filter(
-                brand__slug=brand_slug
-            ).order_by('-id').distinct()
+            queryset = queryset.filter(brand__slug=brand_slug).order_by('-id')
 
         return queryset
 
