@@ -91,7 +91,13 @@ class BrandViewSet(BaseStoreViewSet):
                 required=False
             )
         ]
-    )
+    ),
+    create=extend_schema(description='Create a new product.'),
+    retrieve=extend_schema(description='Retrieve a single product.'),
+    update=extend_schema(description='Full update of a product. All the '
+                                     'fields must be filled.'),
+    partial_update=extend_schema(description='Partial update of a product.'),
+    destroy=extend_schema(description='Remove a product from the system.')
 )
 class ProductViewSet(BaseStoreViewSet):
     """View for managing product APIs."""
@@ -137,6 +143,7 @@ class ProductViewSet(BaseStoreViewSet):
 
 @extend_schema_view(
     list=extend_schema(
+        description='List of product lines filtered by product.',
         parameters=[
             OpenApiParameter(
                 'product_slug',
@@ -146,7 +153,9 @@ class ProductViewSet(BaseStoreViewSet):
             )
         ],
     ),
+    create=extend_schema(description='Create a new product line.'),
     update=extend_schema(
+        description='Full update of a product line.',
         parameters=[
             OpenApiParameter(
                 'id',
@@ -156,6 +165,7 @@ class ProductViewSet(BaseStoreViewSet):
         ]
     ),
     partial_update=extend_schema(
+        description='Partial update of a product line.',
         parameters=[
             OpenApiParameter(
                 'id',
@@ -165,6 +175,7 @@ class ProductViewSet(BaseStoreViewSet):
         ]
     ),
     destroy=extend_schema(
+        description='Remove product line from the system.',
         parameters=[
             OpenApiParameter(
                 'id',
@@ -176,22 +187,27 @@ class ProductViewSet(BaseStoreViewSet):
     attach_variation=extend_schema(
             request=None,
             responses={204: None},
+            description='Assign variation to the product line.',
             parameters=[
                 OpenApiParameter(
                     'id',
                     OpenApiTypes.INT,
                     OpenApiParameter.PATH,
+                    description='Product line id',
                     required=True)
             ]
         ),
     detach_variation=extend_schema(
         request=None,
         responses={204: None},
+        description='Remove variation from the list of variations of the '
+                    'product line.',
         parameters=[
             OpenApiParameter(
                 'id',
                 OpenApiTypes.INT,
                 OpenApiParameter.PATH,
+                description='Product line id',
                 required=True)
         ]
     ),
